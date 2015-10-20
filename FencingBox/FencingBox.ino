@@ -19,11 +19,11 @@ boolean off_target_A, off_target_B;
 boolean self_contact_A, self_contact_B;
 
 /********************************** Timing ************************************/
-unsigned long depress_time_micros_A = 0, depress_time_micros_B = 0;
+unsigned long depress_time_micros_A, depress_time_micros_B;
 
 /***************************** Internal Status ********************************/
-boolean depressed_A = false, depressed_B = false;
-boolean locked_out = false;
+boolean depressed_A, depressed_B;
+boolean locked_out;
 boolean self_contact_A_changed, self_contact_B_changed;
 
 /******************************************************************************/
@@ -51,22 +51,7 @@ void display_signals()
 {
   if (locked_out)
   {
-    if (touch_A)
-    {
-
-    }
-    if (touch_B)
-    {
-
-    }
-    if (off_target_A)
-    {
-
-    }
-    if (off_target_B)
-    {
-
-    }
+    signal_touch(touch_A, off_target_A, touch_B, off_target_B);
     reset();
   }
   //
@@ -74,11 +59,11 @@ void display_signals()
   {
     if (self_contact_A_changed)
     {
-      
+      signal_self_contact(FENCER_A, self_contact_A);
     }
     if (self_contact_B_changed)
     {
-  
+      signal_self_contact(FENCER_B, self_contact_B);
     }
   }
 }
@@ -129,7 +114,7 @@ void epee()
           touch_A = true;
         }
       }
-      // A just landed a touch (i.e. just depressed tip), so record the time so 
+      // A just landed a touch (i.e. just depressed tip), so record the time so
       // waiting for the depress time minimum can start
       else
       {
@@ -158,7 +143,7 @@ void epee()
           touch_B = true;
         }
       }
-      // B just landed a touch (i.e. just depressed tip), so record the time so 
+      // B just landed a touch (i.e. just depressed tip), so record the time so
       // waiting for the depress time minimum can start
       else
       {

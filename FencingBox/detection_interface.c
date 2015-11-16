@@ -64,6 +64,12 @@ void setup_detection(Weapon weapon)
       break;
 
     case FOIL:
+      digitalWrite(pin_AA_pull, LOW);
+      digitalWrite(pin_AB_pull, HIGH);
+      digitalWrite(pin_AC_pull, LOW);
+      digitalWrite(pin_BA_pull, LOW);
+      digitalWrite(pin_BB_pull, HIGH);
+      digitalWrite(pin_BC_pull, LOW);
       break;
 
     case SABER:
@@ -80,9 +86,10 @@ void setup_detection(Weapon weapon)
   }
 }
 
-boolean in_contact_with_target(Fencer fencer, Weapon weapon)
+FencerStatus get_fencer_status(Fencer fencer, Weapon weapon)
 {
   int analogReadValue = 0;
+  FencerStatus fStatus;
   switch (weapon)
   {
     case EPEE:
@@ -90,22 +97,34 @@ boolean in_contact_with_target(Fencer fencer, Weapon weapon)
       {
         case FENCER_A:
           analogReadValue = analogRead(pin_AB_read);
+          break;
+
         case FENCER_B:
           analogReadValue = analogRead(pin_BB_read);
+          break;
+
         default:
-          return false;
+          analogReadValue = 0;
+          break;
       }
-      return ((analogReadValue >= EPEE_TARGET_CONTACT_MIN)
-              && (analogReadValue <= EPEE_TARGET_CONTACT_MAX));
+      
+      if ((analogReadValue >= EPEE_TARGET_CONTACT_MIN)
+          && (analogReadValue <= EPEE_TARGET_CONTACT_MAX))
+      {
+        fStatus |= IN_CONTACT_ON_TARGET_FLAG;
+      }
+      break;
 
     case FOIL:
-      return false;
+      break;
 
     case SABER:
-      return false;
+      break;
 
     default:
-      return false;
+      break;
   }
+
+  return fStatus;
 }
 

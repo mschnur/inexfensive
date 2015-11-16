@@ -13,9 +13,31 @@
 extern "C" {
 #endif
 
-unsigned long get_current_time_micros();
+typedef uint8_t FencerStatus;
 
-boolean in_contact_with_target(Fencer fencer, Weapon weapon);
+const FencerStatus NO_CONTACT = 0;
+const FencerStatus IN_CONTACT_ON_TARGET_FLAG = 1;
+const FencerStatus IN_CONTACT_OFF_TARGET_FLAG = 2;
+const FencerStatus SELF_CONTACT_FLAG = 4;
+
+inline unsigned long get_current_time_micros();
+
+FencerStatus get_fencer_status(Fencer fencer, Weapon weapon);
+
+inline boolean in_contact_on_target(FencerStatus fStatus)
+{
+  return (fStatus & IN_CONTACT_ON_TARGET_FLAG == IN_CONTACT_ON_TARGET_FLAG);
+}
+
+inline boolean in_contact_off_target(FencerStatus fStatus)
+{
+  return (fStatus & IN_CONTACT_OFF_TARGET_FLAG == IN_CONTACT_OFF_TARGET_FLAG);
+}
+
+inline boolean in_self_contact(FencerStatus fStatus)
+{
+  return (fStatus & SELF_CONTACT_FLAG == SELF_CONTACT_FLAG);
+}
 
 void setup_detection(Weapon weapon);
 

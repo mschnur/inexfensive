@@ -7,7 +7,7 @@
 #include "WProgram.h"
 #endif
 
-#include "fencing_types.h"
+#include "FencingTypes.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,7 @@ const FencerStatus SELF_CONTACT_FLAG = 4;
 
 inline unsigned long get_current_time_micros();
 
-FencerStatus get_fencer_status(Fencer fencer, Weapon weapon);
+FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon);
 
 inline boolean in_contact_on_target(FencerStatus fStatus)
 {
@@ -39,7 +39,7 @@ inline boolean in_self_contact(FencerStatus fStatus)
   return (fStatus & SELF_CONTACT_FLAG == SELF_CONTACT_FLAG);
 }
 
-void setup_detection(Weapon weapon);
+void setup_detection(WeaponType weapon);
 
 #ifdef __cplusplus
 }

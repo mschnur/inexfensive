@@ -2,117 +2,103 @@
 /********************************* Includes ***********************************/
 #include "detection_interface.h"
 #include "display_interface.h"
+#include "Fencer.h"
+#include "WeaponMode.h"
 
 /******************************** Constants ***********************************/
-#define EPEE_DEPRESS_US 2000
-#define EPEE_LOCKOUT_US 45000
-
-#define FOIL_DEPRESS_US 14000
-#define FOIL_LOCKOUT_US 300000
-
-#define SABER_DEPRESS_US
-#define SABER_LOCKOUT_US
-
-/****************************** Display Status ********************************/
-boolean touch_A, touch_B;
-boolean off_target_A, off_target_B;
-boolean self_contact_A, self_contact_B;
-
-/********************************** Timing ************************************/
-unsigned long depress_time_micros_A, depress_time_micros_B;
 
 /***************************** Internal Status ********************************/
-Weapon currentWeaponMode;
+WeaponMode * currentWeaponMode;
 boolean switchWeaponMode;
-boolean depressed_A, depressed_B;
 boolean locked_out;
-boolean self_contact_A_changed, self_contact_B_changed;
+
+/******************************* Weapon Modes *********************************/
+// initialized in setup()
+WeaponMode * epeeMode;
+WeaponMode * foilMode;
+WeaponMode * saberMode;
+
+/********************************* Fencers ************************************/
+Fencer fencerA = Fencer(FENCER_A);
+Fencer fencerB = Fencer(FENCER_B);
 
 /******************************************************************************/
 
 /******************************************************************************/
 
 
-void setup() {
-  // put your setup code here, to run once:
-  currentWeaponMode = EPEE;
+void setup()
+{
+  // init weapon modes
+  epeeMode = new EpeeMode();
+  foilMode = new FoilMode();
+  saberMode = new SaberMode();
+
+  // Box starts in epee mode
+  currentWeaponMode = epeeMode;
   switchWeaponMode = false;
-  setup_detection(EPEE);
+
+  // sets all internal variables to their defaults
+  reset();
+
+  // allows detection and display implementations to do any required initialization
+  setup_detection(currentWeaponMode->getType());
   setup_display();
 }
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
+  // Using an infinite while loop here is slightly faster than the
+  // standard loop mechanism (i.e. the loop() method being called repeatedly)
   while (1)
   {
+    // switchWeaponMode will be set to true in an interrupt when
+    // the change weapon button is pressed on the box or remote
     if (switchWeaponMode)
     {
       switchWeapons();
     }
-    
+
     // detect state changes during this iteration
-    switch (currentWeaponMode)
-    {
-      case EPEE:
-        epee();
-        break;
+    currentWeaponMode->updateStatus(fencerA, fencerB, locked_out);
 
-      case FOIL:
-        break;
-
-      case SABER:
-        break;
-      
-      default:
-        break;
-    }
-
-    // display any signals (visual or audio), if needed
+    // display any signals (visual or audio), as needed for the current state
     display_signals();
   }
 }
 
 void display_signals()
 {
+  // if we are locked out than an an on target or off target touch has occurred
   if (locked_out)
   {
-    signal_touch(touch_A, off_target_A, touch_B, off_target_B);
+    signal_touch(fencerA.touch, fencerA.off_target, fencerB.touch, fencerB.off_target);
     reset();
   }
   // this else is here because self contact is not signaled when a valid touch
   // or off target touch is being signaled
   else
   {
-    if (self_contact_A_changed)
+    if (fencerA.self_contact_changed)
     {
-      signal_self_contact(FENCER_A, self_contact_A);
-      self_contact_A_changed = false;
+      signal_self_contact(FENCER_A, fencerA.self_contact);
+      fencerA.self_contact_changed = false;
     }
 
-    if (self_contact_B_changed)
+    if (fencerB.self_contact_changed)
     {
-      signal_self_contact(FENCER_B, self_contact_B);
-      self_contact_B_changed = false;
+      signal_self_contact(FENCER_B, fencerB.self_contact);
+      fencerB.self_contact_changed = false;
     }
   }
 }
 
 void reset()
 {
-  // reset display booleans
-  touch_A = false;
-  touch_B = false;
-  off_target_A = false;
-  off_target_B = false;
-  self_contact_A = false;
-  self_contact_B = false;
-  // reset all time values
-  depress_time_micros_A = 0;
-  depress_time_micros_B = 0;
-  // reset all status booleans
-  depressed_A = false;
-  depressed_B = false;
+  // reset fencer statuses
+  fencerA.reset();
+  fencerB.reset();
+  // make sure we are no longer locked out
   locked_out = false;
 }
 
@@ -120,107 +106,27 @@ void switchWeapons()
 {
   // reset the flag
   switchWeaponMode = false;
-  
+
   // set the current weapon mode (cycle through modes)
-  switch (currentWeaponMode)
+  switch (currentWeaponMode->nextWeaponType())
   {
     case EPEE:
-      currentWeaponMode = FOIL;
+      currentWeaponMode = epeeMode;
       break;
 
     case FOIL:
-      currentWeaponMode = SABER;
+      currentWeaponMode = foilMode;
       break;
 
     case SABER:
+      currentWeaponMode = saberMode;
+      break;
+
     default:
-      currentWeaponMode = EPEE;
+      // do nothing
       break;
   }
 
   // set up detection for the newly selected weapon mode
-  setup_detection(currentWeaponMode);  
-}
-
-void epee()
-{
-  unsigned long now = get_current_time_micros();
-  FencerStatus status_A, status_B;
-
-  // A or B has had a touch register and enough time has passed to now lock out the opponent,
-  // or both A and B have registered a touch, so the remainder of the lockout can be ignored.
-  if ((touch_A && (now - depress_time_micros_A >= EPEE_LOCKOUT_US))
-      || (touch_B && (now - depress_time_micros_B >= EPEE_LOCKOUT_US))
-      || (touch_A && touch_B))
-  {
-    locked_out = true;
-  }
-
-  // first check for the status of fencer A
-  // don't check A if they have already registered a touch
-  if (touch_A == false)
-  {
-    // get fencer A's status
-    status_A = get_fencer_status(FENCER_A, EPEE);
-    
-    // if fencer A is in contact with valid target area
-    if (in_contact_on_target(status_A))
-    {
-      // if fencer A's tip was depressed during the last iteration
-      if (depressed_A)
-      {
-        // A has had their tip depressed for long enough, register A's touch as valid.
-        if (get_current_time_micros() - depress_time_micros_A >= EPEE_DEPRESS_US)
-        {
-          touch_A = true;
-        }
-      }
-      // A just landed a touch (i.e. just depressed tip), so record the time so
-      // waiting for the depress time minimum can start
-      else
-      {
-        depress_time_micros_A = get_current_time_micros();
-        depressed_A = true;
-      }
-    }
-    // A has lost contact with B before the touch was depressed long enough to register as a point
-    else if (depressed_A)
-    {
-      depress_time_micros_A = 0;
-      depressed_A = false;
-    }
-  }
-
-  // second check for fencer B
-  // don't check B if they have already registered a touch
-  if (touch_B == false)
-  {
-    // get fencer A's status
-    status_B = get_fencer_status(FENCER_B, EPEE);
-    
-    if (in_contact_on_target(status_B))
-    {
-      if (depressed_B)
-      {
-        // B has had their tip depressed for long enough, register B's touch as valid.
-        if (get_current_time_micros() - depress_time_micros_B >= EPEE_DEPRESS_US)
-        {
-          touch_B = true;
-        }
-      }
-      // B just landed a touch (i.e. just depressed tip), so record the time so
-      // waiting for the depress time minimum can start
-      else
-      {
-        depress_time_micros_B = get_current_time_micros();
-        depressed_B = true;
-      }
-    }
-    // B has lost contact with A before the touch was depressed long enough to register as a point
-    else if (depressed_B)
-    {
-      depress_time_micros_B = 0;
-      depressed_B = false;
-    }
-  }
+  setup_detection(currentWeaponMode->getType());
 }

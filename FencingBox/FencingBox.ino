@@ -1,7 +1,7 @@
 
 /********************************* Includes ***********************************/
-#include "detection_interface.h"
-#include "display_interface.h"
+#include "DetectionInterface.h"
+#include "DisplayInterface.h"
 #include "Fencer.h"
 #include "WeaponMode.h"
 

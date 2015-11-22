@@ -1,6 +1,6 @@
 #include "WeaponMode.h"
 #include "FencingConstants.h"
-#include "detection_interface.h"
+#include "DetectionInterface.h"
 
 void SaberMode::updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lockedOut)
 {

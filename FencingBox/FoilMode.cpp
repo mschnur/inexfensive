@@ -32,7 +32,7 @@ void FoilMode::updateFencerStatus(Fencer& fencer)
 
   // first check for the status of fencer
   // don't check fencer if they have already registered a touch (on or off target)
-  if (fencer.touch == false && fencer.off_target == false)
+  if (!fencer.touch && !fencer.off_target)
   {
     // if fencer is in contact with valid target area
     if (in_contact_on_target(fStatus))

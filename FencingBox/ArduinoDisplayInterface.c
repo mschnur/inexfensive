@@ -17,7 +17,7 @@ const uint8_t pin_on_target_B = 3;    // Fencer B on target (digital)
 const uint8_t pin_off_target_B = 5;   // Fencer B off target (digital)
 const uint8_t pin_self_contact_B = 6; // Fencer B self contact (digital)
 
-const uint8_t pin_buzzer = 2;
+const uint8_t pin_buzzer = 0;
 
 /******************************************************************************/
 

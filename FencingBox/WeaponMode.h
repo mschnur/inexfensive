@@ -21,7 +21,7 @@ class WeaponMode
 
     virtual void updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lockedOut) = 0;
 
-    virtual WeaponType nextWeaponType() = 0;
+    virtual inline WeaponType const nextWeaponType() const = 0;
 
     WeaponType getType()
     {
@@ -36,7 +36,7 @@ class EpeeMode : public WeaponMode
 
     void updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lockedOut);
 
-    WeaponType nextWeaponType()
+    inline WeaponType const nextWeaponType() const
     {
       return FOIL;
     }
@@ -52,7 +52,7 @@ class FoilMode : public WeaponMode
 
     void updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lockedOut);
 
-    WeaponType nextWeaponType()
+    inline WeaponType const nextWeaponType() const
     {
       return SABER;
     }
@@ -68,7 +68,7 @@ class SaberMode : public WeaponMode
 
     void updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lockedOut);
 
-    WeaponType nextWeaponType()
+    inline WeaponType const nextWeaponType() const
     {
       return EPEE;
     }

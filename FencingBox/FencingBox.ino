@@ -2,6 +2,7 @@
 /********************************* Includes ***********************************/
 #include "DetectionInterface.h"
 #include "DisplayInterface.h"
+#include "WeaponChangeInterface.h"
 #include "Fencer.h"
 #include "WeaponMode.h"
 
@@ -9,7 +10,7 @@
 
 /***************************** Internal Status ********************************/
 WeaponMode * currentWeaponMode;
-boolean switchWeaponMode;
+
 boolean locked_out;
 
 /******************************* Weapon Modes *********************************/
@@ -36,7 +37,6 @@ void setup()
 
   // Box starts in epee mode
   currentWeaponMode = epeeMode;
-  switchWeaponMode = false;
 
   // sets all internal variables to their defaults
   reset();
@@ -44,6 +44,7 @@ void setup()
   // allows detection and display implementations to do any required initialization
   setup_detection(currentWeaponMode->getType());
   setup_display();
+  setupWeaponChange();
 }
 
 void loop()
@@ -54,7 +55,7 @@ void loop()
   {
     // switchWeaponMode will be set to true in an interrupt when
     // the change weapon button is pressed on the box or remote
-    if (switchWeaponMode)
+    if (switchWeaponMode())
     {
       switchWeapons();
     }
@@ -105,7 +106,7 @@ void reset()
 void switchWeapons()
 {
   // reset the flag
-  switchWeaponMode = false;
+  weaponModeChanged();
 
   // set the current weapon mode (cycle through modes)
   switch (currentWeaponMode->nextWeaponType())

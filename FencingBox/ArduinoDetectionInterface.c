@@ -100,10 +100,10 @@ void setup_detection(WeaponType weapon)
     case SABER:
       digitalWrite(pin_AA_pull, LOW);
       digitalWrite(pin_AB_pull, HIGH);
-      digitalWrite(pin_AC_pull, LOW);
+      digitalWrite(pin_AC_pull, HIGH);
       digitalWrite(pin_BA_pull, LOW);
       digitalWrite(pin_BB_pull, HIGH);
-      digitalWrite(pin_BC_pull, HIGH);
+      digitalWrite(pin_BC_pull, LOW);
       break;
 
     default:
@@ -214,6 +214,7 @@ FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon)
           break;
       }
 
+      // This fencer is in contact if this fencer's B line is at 2.5V
       if (arduino_equals_voltage_with_tolerance(epeeLineValue, 2.5f, 0.4f))
       {
         fStatus |= IN_CONTACT_ON_TARGET_FLAG;
@@ -224,7 +225,7 @@ FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon)
       readLines(line_vals, fencer);
 
       /*
-       * This fencer is in contact on target is this fencer's B line and the opponent's
+       * This fencer is in contact on target if this fencer's B line and the opponent's
        * A line are both at 2.5V
        */
       // Check that this fencer's B line and the opponent's A line are equal

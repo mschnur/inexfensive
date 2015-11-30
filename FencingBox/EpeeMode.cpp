@@ -13,6 +13,7 @@ void EpeeMode::updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_locke
       || (fencerA.touch && fencerB.touch))
   {
     out_lockedOut = true;
+    return; // return early, because there is no self contact to detect in epee
   }
 
   updateFencerStatus(fencerA);

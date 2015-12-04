@@ -93,20 +93,24 @@ void FoilMode::updateFencerStatus(Fencer& fencer)
 
   // check whether fencer's self touch state has changed
   // (i.e. from self touching to not self touching or vice versa)
-  if (in_self_contact(fStatus))
-  {
-    if (!fencer.self_contact)
-    {
-      fencer.self_contact = true;
-      fencer.self_contact_changed = true;
-    }
-  }
-  else // not in self contact
-  {
-    if (fencer.self_contact)
-    {
-      fencer.self_contact = false;
-      fencer.self_contact_changed = true;
-    }
-  }
+  fencer.self_contact = in_self_contact(fStatus);
+//  if (in_self_contact(fStatus))
+//  {
+//    if (!fencer.self_contact)
+//    {
+//      fencer.self_contact = true;
+//      fencer.self_contact_changed = true;
+//    }
+//  }
+//  else // not in self contact
+//  {
+//    if (fencer.self_contact)
+//    {
+//      fencer.self_contact = false;
+//      fencer.self_contact_changed = true;
+//    }
+//  }
 }
+
+
+

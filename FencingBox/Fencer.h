@@ -36,11 +36,16 @@ class Fencer
 
     // Timing
     unsigned long depress_time_micros;
+    unsigned long whipover_time_micros;
 
     // Internal Status
     boolean depressed_on_target;
     boolean depressed_off_target;
-
+    
+    boolean touchesAllowed;
+    boolean inWhipoverProtection;
+    boolean bladesInContact;
+    int whipoverInterruptCount;
 
   public:
     // constructor
@@ -58,12 +63,21 @@ class Fencer
       self_contact = false;
 
       depress_time_micros = 0L;
+      whipover_time_micros = 0L;
 
       depressed_on_target = false;
       depressed_off_target = false;
       self_contact_changed = false;
+
+      touchesAllowed = false;
+      inWhipoverProtection = false;
+      bladesInContact = false;
+      whipoverInterruptCount = 0;
     }
 };
 
 
 #endif // #ifndef __INCLUDE_FENCER_H__
+
+
+

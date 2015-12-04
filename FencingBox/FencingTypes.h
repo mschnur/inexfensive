@@ -15,3 +15,6 @@ typedef enum WeaponType
 } WeaponType;
 
 #endif // #ifndef __INCLUDE_FENCING_TYPES_H__
+
+
+

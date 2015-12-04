@@ -22,7 +22,7 @@ void setupWeaponChange()
 
   // setup pin on which interrupt signal will be received
   pinMode(pin_changeWeapon, INPUT);
-  
+
   // set up interrupt for changing weapon mode
   attachInterrupt(digitalPinToInterrupt(pin_changeWeapon), weaponChangeISR, RISING);
 }
@@ -36,4 +36,7 @@ void weaponModeChanged()
 {
   switchFlag = false;
 }
+
+
+
 

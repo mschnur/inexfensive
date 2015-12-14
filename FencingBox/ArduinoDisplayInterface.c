@@ -31,6 +31,16 @@ void setup_display()
   pinMode(pin_off_target_B, OUTPUT);
   pinMode(pin_self_contact_B, OUTPUT);
   pinMode(pin_buzzer, OUTPUT);
+
+  // initialize all pins to low
+  digitalWrite(pin_on_target_A, LOW);
+  digitalWrite(pin_off_target_A, LOW);
+  digitalWrite(pin_self_contact_A, LOW);
+  digitalWrite(pin_on_target_B, LOW);
+  digitalWrite(pin_off_target_B, LOW);
+  digitalWrite(pin_self_contact_B, LOW);
+  digitalWrite(pin_buzzer, LOW);
+
 }
 
 void signal_touch(boolean on_target_A, boolean off_target_A,
@@ -44,7 +54,7 @@ void signal_touch(boolean on_target_A, boolean off_target_A,
   {
     return;
   }
-  
+
   // first set the on and off target outputs according to the parameters
   digitalWrite(pin_on_target_A, on_target_A);
   digitalWrite(pin_off_target_A, off_target_A);
@@ -53,8 +63,8 @@ void signal_touch(boolean on_target_A, boolean off_target_A,
 
   // self contact isn't displayed when a touch or off target is being displayed,
   // so ensure that those pins are low
-  digitalWrite(pin_self_contact_A, LOW);
-  digitalWrite(pin_self_contact_B, LOW);
+  //digitalWrite(pin_self_contact_A, LOW);
+  //digitalWrite(pin_self_contact_B, LOW);
 
   // buzzer must go off on a touch (on or off target), so set that pin high
   digitalWrite(pin_buzzer, HIGH);
@@ -90,4 +100,7 @@ void signal_self_contact(FencerSide fencer, boolean inContact)
       break;
   }
 }
+
+
+
 

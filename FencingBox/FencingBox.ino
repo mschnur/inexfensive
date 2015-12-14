@@ -36,7 +36,7 @@ void setup()
   saberMode = new SaberMode();
 
   // Box starts in epee mode
-  currentWeaponMode = epeeMode;
+  currentWeaponMode = foilMode;
 
   // sets all internal variables to their defaults
   reset();
@@ -80,17 +80,17 @@ void display_signals()
   // or off target touch is being signaled
   else
   {
-    if (fencerA.self_contact_changed)
-    {
+//    if (fencerA.self_contact_changed)
+//    {
       signal_self_contact(FENCER_A, fencerA.self_contact);
-      fencerA.self_contact_changed = false;
-    }
+//      fencerA.self_contact_changed = false;
+//    }
 
-    if (fencerB.self_contact_changed)
-    {
+//    if (fencerB.self_contact_changed)
+//    {
       signal_self_contact(FENCER_B, fencerB.self_contact);
-      fencerB.self_contact_changed = false;
-    }
+//      fencerB.self_contact_changed = false;
+//    }
   }
 }
 
@@ -131,3 +131,6 @@ void switchWeapons()
   // set up detection for the newly selected weapon mode
   setup_detection(currentWeaponMode->getType());
 }
+
+
+

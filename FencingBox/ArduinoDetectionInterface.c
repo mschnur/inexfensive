@@ -259,21 +259,79 @@ FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon)
       // (10 tolerance here equates to ~0.05V), then check for one of them being
       // one of the values that indicates self contact
       if (equals_with_tolerance(line_vals[A1_index], line_vals[C1_index], 10)
-          && arduino_gte_voltage_with_tolerance(line_vals[A1_index], 1.0f, 0.15f)
-          && arduino_lte_voltage_with_tolerance(line_vals[A1_index], 2.0f, 0.15f))
+          //          && arduino_gte_voltage_with_tolerance(line_vals[A1_index], 1.0f, 0.05f)
+          //          && arduino_lte_voltage_with_tolerance(line_vals[A1_index], 2.0f, 0.05f))
+          && line_vals[A1_index] >= 183
+          && line_vals[A1_index] <= 428)
+    {
+      fStatus |= SELF_CONTACT_FLAG;
+    }
+
+    break;
+
+  case SABER:
+      readLines(line_vals, fencer);
+
+      /*
+       * For saber, the lines of each FENCER_A and FENCER_B are not the same.
+       *    FENCER_A has line A at 0V, line B at 5V, and line C at 5V
+       *    FENCER_B has line A at 0V, line B at 5V, and line C at 0V
+       * There are two ambiguous cases for FENCER_A, which makes
+       *   it impossible to distinguish the difference between
+       *   FENCER_A touching the opponent while contacting self
+       *   and FENCER_A touching the opponent while contacting
+       *   self while both blades are in contact.
+       * This ambiguity is dealt with by assuming in this case that
+       *   no blade contact is occurring.
+       */
+
+      /*
+       * This fencer's blade is in contact with the opponent's blade if this fencer's
+       * B line and the opponent's B line are both equal,
+       * UNLESS this fencer is FENCER_A and this fencer's B line and the opponent's
+       * A line are both equal.
+       */
+      // Check that this fencer's B line and the opponent's B line are equal
+      // (10 tolerance here equates to ~0.05V),
+      // then check to that this is not the ambiguous case
+      if (equals_with_tolerance(line_vals[B1_index], line_vals[B2_index], 10)
+            && (!(fencer == FENCER_A)
+                || !equals_with_tolerance(line_vals[B1_index], line_vals[A2_index], 10)))
       {
-        fStatus |= SELF_CONTACT_FLAG;
+        fStatus |= BLADE_CONTACT_FLAG;
       }
 
-      break;
+    /*
+     * This fencer is in contact on target if this fencer's B line and the opponent's
+     * A line are both equal
+     */
+    // Check that this fencer's B line and the opponent's A line are equal
+    // (10 tolerance here equates to ~0.05V)
+    if (equals_with_tolerance(line_vals[B1_index], line_vals[A2_index], 10))
+    {
+      fStatus |= IN_CONTACT_ON_TARGET_FLAG;
+    }
 
-    case SABER:
-      break;
+    /*
+     * This fencer is in self contact if this fencer's A and B line are at the same
+     * voltage
+     */
+    // Check that this fencer's A line and B line are equal
+    // (10 tolerance here equates to ~0.05V)
+    if (equals_with_tolerance(line_vals[A1_index], line_vals[C1_index], 10))
+    {
+      fStatus |= SELF_CONTACT_FLAG;
+    }
 
-    default:
-      break;
-  }
+    break;
 
-  return fStatus;
+  default:
+      break;
+    }
+
+return fStatus;
 }
+
+
+
 

@@ -25,3 +25,6 @@ void signal_self_contact(FencerSide fencer, boolean inContact);
 #endif
 
 #endif // #ifndef __INCLUDE_DISPLAY_INTERFACE_H__
+
+
+

@@ -15,10 +15,10 @@ extern "C" {
 
 void setup_display();
 
-void signal_touch(boolean on_target_A, boolean off_target_A,
-                  boolean on_target_B, boolean off_target_B);
+void signal_touch(boolean on_target_A, boolean off_target_A, boolean self_contact_A,
+                  boolean on_target_B, boolean off_target_B, boolean self_contact_B);
 
-void signal_self_contact(FencerSide fencer, boolean inContact);
+void signal_self_contact(boolean selfA, boolean selfB);
 
 #ifdef __cplusplus
 }

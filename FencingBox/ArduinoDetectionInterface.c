@@ -44,13 +44,14 @@
 
 
 /*********************************** Pins *************************************/
-const uint8_t pin_AA_pull = 8;    // Pullup/pulldown for Fencer A's A line (digital)
-const uint8_t pin_AB_pull = 12;   // Pullup/pulldown for Fencer A's B line (digital)
-const uint8_t pin_AC_pull = 13;   // Pullup/pulldown for Fencer A's C line (digital)
+const uint8_t pin_AA_pull = 0;    // Pullup/pulldown for Fencer A's A line (digital)
+const uint8_t pin_AB_pull = 1;   // Pullup/pulldown for Fencer A's B line (digital)
+const uint8_t pin_AC_pull = 2;   // Pullup/pulldown for Fencer A's C line (digital)
 
-const uint8_t pin_BA_pull = 1;    // Pullup/pulldown for Fencer B's A line (digital)
-const uint8_t pin_BB_pull = 4;    // Pullup/pulldown for Fencer B's B line (digital)
-const uint8_t pin_BC_pull = 7;    // Pullup/pulldown for Fencer B's C line (digital)
+const uint8_t pin_BA_pull = 4;    // Pullup/pulldown for Fencer B's A line (digital)
+const uint8_t pin_BB_pull = 5;    // Pullup/pulldown for Fencer B's B line (digital)
+
+const uint8_t pin_time_left = 12;  // high when there is any time on the mega timer
 
 const uint8_t pin_AA_read = 0;    // Fencer A's A line (analog)
 const uint8_t pin_AB_read = 1;    // Fencer A's B line (analog)
@@ -62,7 +63,7 @@ const uint8_t pin_BC_read = 5;    // Fencer B's C line (analog)
 
 /******************************************************************************/
 
-inline unsigned long get_current_time_micros()
+unsigned long get_current_time_micros()
 {
   return micros();
 }
@@ -75,7 +76,9 @@ void setup_detection(WeaponType weapon)
   pinMode(pin_AC_pull, OUTPUT);
   pinMode(pin_BA_pull, OUTPUT);
   pinMode(pin_BB_pull, OUTPUT);
-  pinMode(pin_BC_pull, OUTPUT);
+
+  // set time left indicator pin to be input
+  pinMode(pin_time_left, INPUT);
 
   switch (weapon)
   {
@@ -85,7 +88,6 @@ void setup_detection(WeaponType weapon)
       digitalWrite(pin_AC_pull, LOW);
       digitalWrite(pin_BA_pull, HIGH);
       digitalWrite(pin_BB_pull, LOW);
-      digitalWrite(pin_BC_pull, LOW);
       break;
 
     case FOIL:
@@ -94,7 +96,6 @@ void setup_detection(WeaponType weapon)
       digitalWrite(pin_AC_pull, LOW);
       digitalWrite(pin_BA_pull, LOW);
       digitalWrite(pin_BB_pull, HIGH);
-      digitalWrite(pin_BC_pull, LOW);
       break;
 
     case SABER:
@@ -103,12 +104,16 @@ void setup_detection(WeaponType weapon)
       digitalWrite(pin_AC_pull, HIGH);
       digitalWrite(pin_BA_pull, LOW);
       digitalWrite(pin_BB_pull, HIGH);
-      digitalWrite(pin_BC_pull, LOW);
       break;
 
     default:
       break;
   }
+}
+
+boolean timeIsLeft()
+{
+  return (digitalRead(pin_time_left) == HIGH);
 }
 
 inline void readLines(int * line_val_array, FencerSide fencer)
@@ -263,13 +268,13 @@ FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon)
           //          && arduino_lte_voltage_with_tolerance(line_vals[A1_index], 2.0f, 0.05f))
           && line_vals[A1_index] >= 183
           && line_vals[A1_index] <= 428)
-    {
-      fStatus |= SELF_CONTACT_FLAG;
-    }
+      {
+        fStatus |= SELF_CONTACT_FLAG;
+      }
 
-    break;
+      break;
 
-  case SABER:
+    case SABER:
       readLines(line_vals, fencer);
 
       /*
@@ -295,41 +300,41 @@ FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon)
       // (10 tolerance here equates to ~0.05V),
       // then check to that this is not the ambiguous case
       if (equals_with_tolerance(line_vals[B1_index], line_vals[B2_index], 10)
-            && (!(fencer == FENCER_A)
-                || !equals_with_tolerance(line_vals[B1_index], line_vals[A2_index], 10)))
+          && (!(fencer == FENCER_A)
+              || !equals_with_tolerance(line_vals[B1_index], line_vals[A2_index], 10)))
       {
         fStatus |= BLADE_CONTACT_FLAG;
       }
 
-    /*
-     * This fencer is in contact on target if this fencer's B line and the opponent's
-     * A line are both equal
-     */
-    // Check that this fencer's B line and the opponent's A line are equal
-    // (10 tolerance here equates to ~0.05V)
-    if (equals_with_tolerance(line_vals[B1_index], line_vals[A2_index], 10))
-    {
-      fStatus |= IN_CONTACT_ON_TARGET_FLAG;
-    }
+      /*
+       * This fencer is in contact on target if this fencer's B line and the opponent's
+       * A line are both equal
+       */
+      // Check that this fencer's B line and the opponent's A line are equal
+      // (10 tolerance here equates to ~0.05V)
+      if (equals_with_tolerance(line_vals[B1_index], line_vals[A2_index], 10))
+      {
+        fStatus |= IN_CONTACT_ON_TARGET_FLAG;
+      }
 
-    /*
-     * This fencer is in self contact if this fencer's A and B line are at the same
-     * voltage
-     */
-    // Check that this fencer's A line and B line are equal
-    // (10 tolerance here equates to ~0.05V)
-    if (equals_with_tolerance(line_vals[A1_index], line_vals[C1_index], 10))
-    {
-      fStatus |= SELF_CONTACT_FLAG;
-    }
+      /*
+       * This fencer is in self contact if this fencer's A and B line are at the same
+       * voltage
+       */
+      // Check that this fencer's A line and B line are equal
+      // (10 tolerance here equates to ~0.05V)
+      if (equals_with_tolerance(line_vals[A1_index], line_vals[B1_index], 10))
+      {
+        fStatus |= SELF_CONTACT_FLAG;
+      }
 
-    break;
-
-  default:
       break;
-    }
 
-return fStatus;
+    default:
+      break;
+  }
+
+  return fStatus;
 }
 
 

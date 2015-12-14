@@ -51,7 +51,7 @@ class Fencer
     // constructor
     Fencer(FencerSide fencer) : side(fencer) {}
 
-    inline const FencerSide getSide() const
+    inline FencerSide getSide() const
     {
       return side;
     }
@@ -69,7 +69,7 @@ class Fencer
       depressed_off_target = false;
       self_contact_changed = false;
 
-      touchesAllowed = false;
+      touchesAllowed = true;
       inWhipoverProtection = false;
       bladesInContact = false;
       whipoverInterruptCount = 0;

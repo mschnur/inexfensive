@@ -36,10 +36,10 @@ void setup()
   saberMode = new SaberMode();
 
   // Box starts in epee mode
-  currentWeaponMode = foilMode;
+  currentWeaponMode = epeeMode;
 
   // sets all internal variables to their defaults
-  reset();
+  reset(); 
 
   // allows detection and display implementations to do any required initialization
   setup_detection(currentWeaponMode->getType());
@@ -60,8 +60,12 @@ void loop()
       switchWeapons();
     }
 
-    // detect state changes during this iteration
-    currentWeaponMode->updateStatus(fencerA, fencerB, locked_out);
+    // if there is time remaining in the match
+    if (timeIsLeft())
+    {
+      // detect state changes during this iteration
+      currentWeaponMode->updateStatus(fencerA, fencerB, locked_out);
+    }
 
     // display any signals (visual or audio), as needed for the current state
     display_signals();
@@ -73,24 +77,23 @@ void display_signals()
   // if we are locked out than an an on target or off target touch has occurred
   if (locked_out)
   {
-    signal_touch(fencerA.touch, fencerA.off_target, fencerB.touch, fencerB.off_target);
+    signal_touch(fencerA.touch,
+                 fencerA.off_target,
+                 fencerA.self_contact,
+                 fencerB.touch,
+                 fencerB.off_target,
+                 fencerB.self_contact);
+
+    fencerA.self_contact_changed = false;
+    fencerB.self_contact_changed = false;
     reset();
   }
-  // this else is here because self contact is not signaled when a valid touch
-  // or off target touch is being signaled
-  else
+  else if (fencerA.self_contact_changed || fencerB.self_contact_changed)
   {
-//    if (fencerA.self_contact_changed)
-//    {
-      signal_self_contact(FENCER_A, fencerA.self_contact);
-//      fencerA.self_contact_changed = false;
-//    }
+    signal_self_contact(fencerA.self_contact, fencerB.self_contact);
 
-//    if (fencerB.self_contact_changed)
-//    {
-      signal_self_contact(FENCER_B, fencerB.self_contact);
-//      fencerB.self_contact_changed = false;
-//    }
+    fencerA.self_contact_changed = false;
+    fencerB.self_contact_changed = false;
   }
 }
 

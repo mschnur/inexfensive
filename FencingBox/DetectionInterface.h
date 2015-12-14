@@ -21,28 +21,30 @@ const FencerStatus IN_CONTACT_OFF_TARGET_FLAG = 2;
 const FencerStatus SELF_CONTACT_FLAG = 4;
 const FencerStatus BLADE_CONTACT_FLAG = 8;
 
-inline unsigned long get_current_time_micros();
+unsigned long get_current_time_micros();
+
+boolean timeIsLeft();
 
 FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon);
 
 inline boolean in_contact_on_target(FencerStatus fStatus)
 {
-  return (fStatus & IN_CONTACT_ON_TARGET_FLAG == IN_CONTACT_ON_TARGET_FLAG);
+  return ((fStatus & IN_CONTACT_ON_TARGET_FLAG) == IN_CONTACT_ON_TARGET_FLAG);
 }
 
 inline boolean in_contact_off_target(FencerStatus fStatus)
 {
-  return (fStatus & IN_CONTACT_OFF_TARGET_FLAG == IN_CONTACT_OFF_TARGET_FLAG);
+  return ((fStatus & IN_CONTACT_OFF_TARGET_FLAG) == IN_CONTACT_OFF_TARGET_FLAG);
 }
 
 inline boolean in_self_contact(FencerStatus fStatus)
 {
-  return (fStatus & SELF_CONTACT_FLAG == SELF_CONTACT_FLAG);
+  return ((fStatus & SELF_CONTACT_FLAG) == SELF_CONTACT_FLAG);
 }
 
 inline boolean in_blade_contact(FencerStatus fStatus)
 {
-  return (fStatus & BLADE_CONTACT_FLAG == BLADE_CONTACT_FLAG);
+  return ((fStatus & BLADE_CONTACT_FLAG) == BLADE_CONTACT_FLAG);
 }
 
 void setup_detection(WeaponType weapon);

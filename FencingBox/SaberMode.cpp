@@ -20,13 +20,6 @@ void SaberMode::updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lock
   updateFencerStatus(fencerB);
 }
 
-unsigned long whipover_time_micros;
-
-boolean touchesAllowed;
-boolean inWhipoverProtection;
-boolean bladesInContact;
-int whipoverInterruptCount;
-
 void SaberMode::updateFencerStatus(Fencer& fencer)
 {
   FencerStatus fStatus;
@@ -70,14 +63,20 @@ void SaberMode::updateFencerStatus(Fencer& fencer)
     }
 
     /*
-    Whipover protection state should end if 15 ms passes or if more than 10
-    interrupts in the blade contact occurs
-    */
-    // if whipover protection should end
-    if ((get_current_time_micros() - fencer.whipover_time_micros >= WHIPOVER_TIMEOUT_US)
-        || (fencer.whipoverInterruptCount > MAX_WHIPOVER_INTERRUPT_COUNT))
+     Touches should be allowed again if the blade contact is interrupted more than 10 times
+     during the whipover period.
+     */
+    if (fencer.whipoverInterruptCount > MAX_WHIPOVER_INTERRUPT_COUNT)
     {
-      // end whipover protection and allow touches
+      fencer.touchesAllowed = true;
+    }
+
+    /*
+    Whipover protection state should end if 15 ms passes
+    */
+    if (get_current_time_micros() - fencer.whipover_time_micros >= WHIPOVER_TIMEOUT_US)
+    {
+      // end whipover protection and allow touches (in case they weren't already)
       fencer.inWhipoverProtection = false;
       fencer.touchesAllowed = true;
     }
@@ -119,21 +118,12 @@ void SaberMode::updateFencerStatus(Fencer& fencer)
         // fencer has had their weapon in contact for long enough, register fencer's touch as valid.
         if (get_current_time_micros() - fencer.depress_time_micros >= SABER_DEPRESS_US)
         {
-          // if touches are allowed, record the touch; otherwise, reset the time of contact
-          if (fencer.touchesAllowed)
-          {
-            fencer.touch = true;
-          }
-          else
-          {
-            // reset time of contact to now
-            fencer.depress_time_micros = get_current_time_micros();
-          }
+          fencer.touch = true;
         }
       }
       // fencer just landed a touch (i.e. just made contact), so record the time so
-      // waiting for the contact time minimum can start
-      else
+      // waiting for the contact time minimum can start (if touches are allowed)
+      else if (fencer.touchesAllowed)
       {
         fencer.depress_time_micros = get_current_time_micros();
         fencer.depressed_on_target = true;

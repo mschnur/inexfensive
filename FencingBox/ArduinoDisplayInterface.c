@@ -1,7 +1,7 @@
 
 
 /********************************* Includes ***********************************/
-#include "display_interface.h"
+#include "DisplayInterface.h"
 
 
 /******************************** Constants ***********************************/
@@ -37,11 +37,14 @@ void signal_touch(boolean on_target_A, boolean off_target_A,
                   boolean on_target_B, boolean off_target_B)
 {
   // make sure we don't do anything if all of the parameters are false
-  if (!(on_target_A || off_target_A || on_target_B || off_target_B))
+  if (!(on_target_A || off_target_A || on_target_B || off_target_B)
+      // make sure we don't have an invalid combination of parameters
+      || (on_target_A && off_target_A)
+      || (on_target_B && off_target_B))
   {
     return;
   }
-
+  
   // first set the on and off target outputs according to the parameters
   digitalWrite(pin_on_target_A, on_target_A);
   digitalWrite(pin_off_target_A, off_target_A);
@@ -71,7 +74,7 @@ void signal_touch(boolean on_target_A, boolean off_target_A,
   digitalWrite(pin_off_target_B, LOW);
 }
 
-void signal_self_contact(Fencer fencer, boolean inContact)
+void signal_self_contact(FencerSide fencer, boolean inContact)
 {
   switch (fencer)
   {

@@ -3,7 +3,7 @@
 #include "WeaponChangeInterface.h"
 
 /*********************************** Pins *************************************/
-const uint8_t pin_changeWeapon = 2;
+const uint8_t pin_changeWeapon = 3;
 
 /***************************** Internal Status ********************************/
 volatile boolean switchFlag;

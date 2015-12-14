@@ -5,8 +5,7 @@
 void FoilMode::updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lockedOut)
 {
   unsigned long now = get_current_time_micros();
-  FencerStatus fStatus[2];
-
+  
   // Either A or B has had a touch (on or off target) register and enough time has passed to now
   // lock out the opponent, or both A and B have registered a touch (on or off target), so
   // the remainder of the lockout can be ignored.
@@ -93,23 +92,22 @@ void FoilMode::updateFencerStatus(Fencer& fencer)
 
   // check whether fencer's self touch state has changed
   // (i.e. from self touching to not self touching or vice versa)
-  fencer.self_contact = in_self_contact(fStatus);
-//  if (in_self_contact(fStatus))
-//  {
-//    if (!fencer.self_contact)
-//    {
-//      fencer.self_contact = true;
-//      fencer.self_contact_changed = true;
-//    }
-//  }
-//  else // not in self contact
-//  {
-//    if (fencer.self_contact)
-//    {
-//      fencer.self_contact = false;
-//      fencer.self_contact_changed = true;
-//    }
-//  }
+  if (in_self_contact(fStatus))
+  {
+    if (!fencer.self_contact)
+    {
+      fencer.self_contact = true;
+      fencer.self_contact_changed = true;
+    }
+  }
+  else // not in self contact
+  {
+    if (fencer.self_contact)
+    {
+      fencer.self_contact = false;
+      fencer.self_contact_changed = true;
+    }
+  }
 }
 
 

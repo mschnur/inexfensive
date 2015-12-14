@@ -9,15 +9,15 @@
 #define BUZZER_TIME_MS 1000
 
 /*********************************** Pins *************************************/
-const uint8_t pin_on_target_A = 9;     // Fencer A on target (digital)
-const uint8_t pin_off_target_A = 10;   // Fencer A off target (digital)
-const uint8_t pin_self_contact_A = 11; // Fencer A self contact (digital)
+const uint8_t pin_on_target_A = 6;     // Fencer A on target (digital)
+const uint8_t pin_off_target_A = 7;   // Fencer A off target (digital)
+const uint8_t pin_self_contact_A = 8; // Fencer A self contact (digital)
 
-const uint8_t pin_on_target_B = 3;    // Fencer B on target (digital)
-const uint8_t pin_off_target_B = 5;   // Fencer B off target (digital)
-const uint8_t pin_self_contact_B = 6; // Fencer B self contact (digital)
+const uint8_t pin_on_target_B = 9;    // Fencer B on target (digital)
+const uint8_t pin_off_target_B = 10;   // Fencer B off target (digital)
+const uint8_t pin_self_contact_B = 11; // Fencer B self contact (digital)
 
-const uint8_t pin_buzzer = 0;
+const uint8_t pin_interrupt_mega = 13; // pin to signal to the mega that the other 6 pins are set
 
 /******************************************************************************/
 
@@ -30,7 +30,7 @@ void setup_display()
   pinMode(pin_on_target_B, OUTPUT);
   pinMode(pin_off_target_B, OUTPUT);
   pinMode(pin_self_contact_B, OUTPUT);
-  pinMode(pin_buzzer, OUTPUT);
+  pinMode(pin_interrupt_mega, OUTPUT);
 
   // initialize all pins to low
   digitalWrite(pin_on_target_A, LOW);
@@ -39,12 +39,12 @@ void setup_display()
   digitalWrite(pin_on_target_B, LOW);
   digitalWrite(pin_off_target_B, LOW);
   digitalWrite(pin_self_contact_B, LOW);
-  digitalWrite(pin_buzzer, LOW);
+  digitalWrite(pin_interrupt_mega, LOW);
 
 }
 
-void signal_touch(boolean on_target_A, boolean off_target_A,
-                  boolean on_target_B, boolean off_target_B)
+void signal_touch(boolean on_target_A, boolean off_target_A, boolean self_contact_A,
+                  boolean on_target_B, boolean off_target_B, boolean self_contact_B)
 {
   // make sure we don't do anything if all of the parameters are false
   if (!(on_target_A || off_target_A || on_target_B || off_target_B)
@@ -55,50 +55,36 @@ void signal_touch(boolean on_target_A, boolean off_target_A,
     return;
   }
 
-  // first set the on and off target outputs according to the parameters
+  // first set all output lines
   digitalWrite(pin_on_target_A, on_target_A);
   digitalWrite(pin_off_target_A, off_target_A);
+  digitalWrite(pin_self_contact_A, self_contact_A);
   digitalWrite(pin_on_target_B, on_target_B);
   digitalWrite(pin_off_target_B, off_target_B);
+  digitalWrite(pin_self_contact_B, self_contact_B);
 
-  // self contact isn't displayed when a touch or off target is being displayed,
-  // so ensure that those pins are low
-  //digitalWrite(pin_self_contact_A, LOW);
-  //digitalWrite(pin_self_contact_B, LOW);
+  // then put the signal line high for a pulse
+  digitalWrite(pin_interrupt_mega, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(pin_interrupt_mega, LOW);
 
-  // buzzer must go off on a touch (on or off target), so set that pin high
-  digitalWrite(pin_buzzer, HIGH);
-
-  // delay until the buzzer should stop going off
-  delay(BUZZER_TIME_MS);
-  // then turn off the buzzer
-  digitalWrite(pin_buzzer, LOW);
-
-  // delay until the lights should stop being on
-  // (only the time remaining after the buzzer time, hence the subtraction)
-  delay(LIGHT_TIME_MS - BUZZER_TIME_MS);
-  // then turn off the lights
+  delay(3000);
   digitalWrite(pin_on_target_A, LOW);
   digitalWrite(pin_off_target_A, LOW);
+  digitalWrite(pin_self_contact_A, LOW);
   digitalWrite(pin_on_target_B, LOW);
-  digitalWrite(pin_off_target_B, LOW);
 }
 
-void signal_self_contact(FencerSide fencer, boolean inContact)
+void signal_self_contact(boolean selfA, boolean selfB)
 {
-  switch (fencer)
-  {
-    case FENCER_A:
-      digitalWrite(pin_self_contact_A, inContact);
-      break;
+  // first set self contact lines appropriately
+  digitalWrite(pin_self_contact_A, selfA);
+  digitalWrite(pin_self_contact_B, selfB);
 
-    case FENCER_B:
-      digitalWrite(pin_self_contact_B, inContact);
-      break;
-
-    default:
-      break;
-  }
+  // then put the signal line high for a pulse
+  digitalWrite(pin_interrupt_mega, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(pin_interrupt_mega, LOW);
 }
 
 

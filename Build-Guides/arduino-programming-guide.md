@@ -10,7 +10,7 @@
 1. Download the latest Arduino IDE for your operating system from [here](https://www.arduino.cc/en/Main/Software).
 2. Depending on which installation package you chose to download, you either need to unzip the `.zip` file that you downloaded or you need to run the `.exe` file that was downloaded.
 3. Connect the Arduino Uno to the computer, installing the appropriate drivers, as explained in [sections 3 and 4 of this guide from Arduino](https://www.arduino.cc/en/Guide/Windows#toc3).
-4. Once the drivers for the Arduino Uno are successfully install, repeat the previous step for the Arduino Mega.
+4. Once the drivers for the Arduino Uno are successfully installed, repeat the previous step for the Arduino Mega.
 
 ## Prepare the Project
 1. Download this project by going [here](https://github.com/mschnur/inexfensive/tree/master) and clicking the `Download Zip` button, which is circled in the following screenshot: <br/>

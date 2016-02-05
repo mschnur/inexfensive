@@ -1,5 +1,12 @@
 
 /********************************* Includes ***********************************/
+/*
+ * The SPI library needs to be included here because for a library's header to be
+ * included in the header search path in *other* files, it must be included in the
+ * main sketch file (this file).
+ */
+#include <SPI.h>
+
 #include "DetectionInterface.h"
 #include "DisplayInterface.h"
 #include "WeaponChangeInterface.h"

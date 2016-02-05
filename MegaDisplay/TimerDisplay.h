@@ -11,27 +11,27 @@
 #include "SevenSegment.h"
 
 /*********************************** Pins *************************************/
-static const uint8_t sOne_p0 = 29;
-static const uint8_t sOne_p1 = 28;
-static const uint8_t sOne_p2 = 27;
-static const uint8_t sOne_p3 = 26;
+static const uint8_t sOne_p0 = 38;
+static const uint8_t sOne_p1 = 36;
+static const uint8_t sOne_p2 = 34;
+static const uint8_t sOne_p3 = 32;
 
-static const uint8_t sTen_p0 = 25;
-static const uint8_t sTen_p1 = 24;
-static const uint8_t sTen_p2 = 23;
-static const uint8_t sTen_p3 = 22;
+static const uint8_t sTen_p0 = 46;
+static const uint8_t sTen_p1 = 44;
+static const uint8_t sTen_p2 = 42;
+static const uint8_t sTen_p3 = 40;
 
-static const uint8_t mOne_p0 = 21;
-static const uint8_t mOne_p1 = 20;
-static const uint8_t mOne_p2 = 19;
-static const uint8_t mOne_p3 = 18;
+static const uint8_t mOne_p0 = 47;
+static const uint8_t mOne_p1 = 45;
+static const uint8_t mOne_p2 = 43;
+static const uint8_t mOne_p3 = 41;
 
-static const uint8_t mTen_p0 = 17;
-static const uint8_t mTen_p1 = 16;
-static const uint8_t mTen_p2 = 15;
-static const uint8_t mTen_p3 = 14;
+static const uint8_t mTen_p0 = 39;
+static const uint8_t mTen_p1 = 37;
+static const uint8_t mTen_p2 = 35;
+static const uint8_t mTen_p3 = 33;
 
-static const uint8_t timeRemaining_pin = 6;
+static const uint8_t timeRemaining_pin = 50;
 /******************************************************************************/
 
 // TimerDisplay declared here so it can be used as a freind class in Time

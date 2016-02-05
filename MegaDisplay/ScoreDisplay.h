@@ -13,26 +13,26 @@
 
 /*********************************** Pins *************************************/
 // Score Display A
-static const uint8_t aOne_p0 = 33;
-static const uint8_t aOne_p1 = 32;
-static const uint8_t aOne_p2 = 31;
-static const uint8_t aOne_p3 = 30;
+static const uint8_t aOne_p0 = 18;
+static const uint8_t aOne_p1 = 17;
+static const uint8_t aOne_p2 = 16;
+static const uint8_t aOne_p3 = 15;
 
-static const uint8_t aTen_p0 = 37;
-static const uint8_t aTen_p1 = 36;
-static const uint8_t aTen_p2 = 35;
-static const uint8_t aTen_p3 = 34;
+static const uint8_t aTen_p0 = 5;
+static const uint8_t aTen_p1 = 4;
+static const uint8_t aTen_p2 = 3;
+static const uint8_t aTen_p3 = 14;
 
 // Score Display B
-static const uint8_t bOne_p0 = 45;
-static const uint8_t bOne_p1 = 44;
-static const uint8_t bOne_p2 = 43;
-static const uint8_t bOne_p3 = 42;
+static const uint8_t bOne_p0 = 10;
+static const uint8_t bOne_p1 = 11;
+static const uint8_t bOne_p2 = 12;
+static const uint8_t bOne_p3 = 13;
 
-static const uint8_t bTen_p0 = 41;
-static const uint8_t bTen_p1 = 40;
-static const uint8_t bTen_p2 = 39;
-static const uint8_t bTen_p3 = 38;
+static const uint8_t bTen_p0 = 9;
+static const uint8_t bTen_p1 = 8;
+static const uint8_t bTen_p2 = 7;
+static const uint8_t bTen_p3 = 6;
 
 /******************************************************************************/
 

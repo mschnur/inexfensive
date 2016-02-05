@@ -44,14 +44,14 @@
 
 
 /*********************************** Pins *************************************/
-const uint8_t pin_AA_pull = 0;    // Pullup/pulldown for Fencer A's A line (digital)
-const uint8_t pin_AB_pull = 1;   // Pullup/pulldown for Fencer A's B line (digital)
-const uint8_t pin_AC_pull = 2;   // Pullup/pulldown for Fencer A's C line (digital)
+const uint8_t pin_AA_pull = 9;    // Pullup/pulldown for Fencer A's A line (digital)
+const uint8_t pin_AB_pull = 8;   // Pullup/pulldown for Fencer A's B line (digital)
+const uint8_t pin_AC_pull = 8;   // Pullup/pulldown for Fencer A's C line (digital)
 
-const uint8_t pin_BA_pull = 4;    // Pullup/pulldown for Fencer B's A line (digital)
+const uint8_t pin_BA_pull = 6;    // Pullup/pulldown for Fencer B's A line (digital)
 const uint8_t pin_BB_pull = 5;    // Pullup/pulldown for Fencer B's B line (digital)
 
-const uint8_t pin_time_left = 12;  // high when there is any time on the mega timer
+const uint8_t pin_time_left = 3;  // high when there is any time on the mega timer
 
 const uint8_t pin_AA_read = 0;    // Fencer A's A line (analog)
 const uint8_t pin_AB_read = 1;    // Fencer A's B line (analog)

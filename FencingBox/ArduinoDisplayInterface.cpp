@@ -16,7 +16,7 @@ const uint8_t pinSRClock = 13; // shift register clock pin (SPI SCK pin)
 const uint8_t pinSRLatch = 10; // shift register latch pin (SPI SS pin)
 const uint8_t pinSRNotClear = 12; // shift register !clear (clear, but active low) pin (digital)
 
-const uint8_t pinInterruptMega = 13; // pin to signal to the mega that the other 6 pins are set
+const uint8_t pinInterruptMega = 4; // pin to signal to the mega that the other 6 pins are set
 
 /****************************** Shift Register ********************************/
 typedef uint8_t SRData;
@@ -60,7 +60,7 @@ void setup_display()
   digitalWrite(pinInterruptMega, LOW);
 
   // settings are based on SN74HC595N shift register specs
-  SPI.beginTransaction(SPISettings(25000000, LSBFIRST, SPI_MODE0));
+//  SPI.beginTransaction(SPISettings(25000000, LSBFIRST, SPI_MODE0));
   setSRState(currentState);
 }
 
@@ -146,7 +146,8 @@ void setBuzzerStateInSR(boolean buzzerOn)
 void setSRState(SRData newState)
 {
   digitalWrite(pinSRLatch, LOW);
-  SPI.transfer(newState);
+  shiftOut(pinSRData, pinSRClock, LSBFIRST, newState);
+//  SPI.transfer(newState);
   digitalWrite(pinSRLatch, HIGH);
   currentState = newState;
 }

@@ -12,9 +12,9 @@
 #include "FencingTypes.h"
 
 /*********************************** Pins *************************************/
-static const uint8_t epee_pin = A8;
-static const uint8_t foil_pin = A9;
-static const uint8_t saber_pin = A10;
+static const uint8_t epee_pin = 53;
+static const uint8_t foil_pin = 51;
+static const uint8_t saber_pin = 49;
 
 /******************************************************************************/
 

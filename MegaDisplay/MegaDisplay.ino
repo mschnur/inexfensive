@@ -36,8 +36,8 @@
 #include "FencingTypes.h"
 
 /********************************** Pins **************************************/
-const uint8_t weaponSelectPin = 2;
-const uint8_t unoInterruptPin = 3;
+const uint8_t weaponSelectPin = 20;
+const uint8_t unoInterruptPin = 2;
 
 /******************************** Volatiles ***********************************/
 volatile boolean needToChangeWeaponMode = false;

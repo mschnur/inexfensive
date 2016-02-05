@@ -33,22 +33,24 @@
 #include "FencingTypes.h"
 #include "WeaponModeDisplay.h"
 #include "IRreceiver.h"
-#include "AudioVisualController.h"
-#include "UnoReader.h"
 #include "FencingTypes.h"
 
 /********************************** Pins **************************************/
 const uint8_t weaponSelectPin = 2;
+const uint8_t unoInterruptPin = 3;
 
 /******************************** Volatiles ***********************************/
 volatile boolean needToChangeWeaponMode = false;
+volatile boolean unoInterruptChanged = false;
+volatile uint8_t unoInterruptState = LOW;
+
+/********************************** State *************************************/
+boolean weaponModeChangesAllowed = true;
 
 /******************************* I/O Objects **********************************/
 TimerDisplay * timerDisp;
 ScoreDisplay * scoreDispA, * scoreDispB;
 WeaponModeDisplay * modeDisp;
-AudioVisualController * avController;
-UnoReader * unoReader;
 IRrecv irrecv(irReceiverPin);
 
 
@@ -56,12 +58,6 @@ IRrecv irrecv(irReceiverPin);
 
 void setup()
 {
-  // set up interrupt for input from the Arduino Uno
-  unoReader = &UnoReader::getInstance();
-
-  // set up controller for displaying a touch
-  avController = &AudioVisualController::getInstance();
-
   // initialize score displays
   scoreDispA = &ScoreDisplay::getInstance(FENCER_A);
   scoreDispB = &ScoreDisplay::getInstance(FENCER_B);
@@ -76,6 +72,10 @@ void setup()
   pinMode(weaponSelectPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(weaponSelectPin), changeWeaponModeISR, RISING);
 
+  // set up interrupt from Arduino Uno
+  pinMode(unoInterruptPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(unoInterruptPin), unoInterruptISR, CHANGE);
+
   // initialize IR receiver
   irrecv.enableIRIn();  // Start the receiver
 
@@ -88,6 +88,12 @@ void changeWeaponModeISR()
   needToChangeWeaponMode = true;
 }
 
+void unoInterruptISR()
+{
+  unoInterruptState = digitalRead(unoInterruptPin);
+  unoInterruptChanged = true;
+}
+
 void loop()
 {
   while (1)
@@ -95,13 +101,20 @@ void loop()
     // make any updates to timer display as needed (based on whether the timer interupt has triggered or not)
     timerDisp->updateIfNeeded();
 
-    // check if the uno has an update for us
-    if (unoReader->unoUpdateAvailable())
+    // check if an interrupt based on the Uno interrupt signal changing has occcurred
+    if (unoInterruptChanged)
     {
-      handleUnoUpdate();
+      if (unoInterruptState == HIGH)
+      {
+        handleUnoInterruptStart();
+      }
+      else if (unoInterruptState == LOW)
+      {
+        handleUnoInterruptEnd();
+      }
     }
 
-    decode_results  results;        // Somewhere to store the results
+    decode_results  results;        // Somewhere to store the results of reading from the IR receiver
     static unsigned long timeOfLastHandledMessage = 0L;
     boolean remoteSignaledWeaponChange = false;
     if (irrecv.decode(&results))  // Grab an IR code
@@ -172,7 +185,7 @@ void loop()
     }
 
     // change weapon mode if need be
-    if (needToChangeWeaponMode == true)
+    if (needToChangeWeaponMode && weaponModeChangesAllowed)
     {
       if (remoteSignaledWeaponChange)
       {
@@ -196,69 +209,13 @@ void changeWeaponMode()
   needToChangeWeaponMode = false;
 }
 
-void handleUnoUpdate()
+void handleUnoInterruptStart()
 {
-  UnoStatus uStatus = unoReader->getUnoStatus();
-  WeaponType currentType = modeDisp->getCurrentMode();
-  boolean aTouch, bTouch;
-  Serial.print("Uno Update: ");
-  Serial.print("   onTargetA[");
-  Serial.print(onTarget(uStatus, FENCER_A));
-  Serial.print("], offTargetA[");
-  Serial.print(offTarget(uStatus, FENCER_A));
-  Serial.print("], selfContactA[");
-  Serial.print(selfContact(uStatus, FENCER_A));
-  Serial.print("]\n");
-  Serial.print("   onTargetB[");
-  Serial.print(onTarget(uStatus, FENCER_B));
-  Serial.print("], offTargetB[");
-  Serial.print(offTarget(uStatus, FENCER_B));
-  Serial.print("], selfContactB[");
-  Serial.print(selfContact(uStatus, FENCER_B));
-  Serial.print("]\n");
-  Serial.print("   mode[");
-  Serial.print(((currentType == EPEE) ? ("EPEE") : ((currentType == FOIL) ? ("FOIL") : ("SABER"))));
-  Serial.print("]\n");
-  switch (currentType)
-  {
-    case EPEE:
-      aTouch = onTarget(uStatus, FENCER_A);
-      bTouch = onTarget(uStatus, FENCER_B);
-      if (aTouch || bTouch)
-      {
-        timerDisp->stop();
-        avController->signalTouch(aTouch, false, bTouch, false);
-      }
-      break;
-
-    case FOIL:
-      if (touchOccurred(uStatus))
-      {
-        timerDisp->stop();
-        avController->signalTouch(onTarget(uStatus, FENCER_A),
-                                  offTarget(uStatus, FENCER_A),
-                                  onTarget(uStatus, FENCER_B),
-                                  offTarget(uStatus, FENCER_B));
-      }
-      avController->updateSelfContact(selfContact(uStatus, FENCER_A),
-                                      selfContact(uStatus, FENCER_B));
-      break;
-
-    case SABER:
-      aTouch = onTarget(uStatus, FENCER_A);
-      bTouch = onTarget(uStatus, FENCER_B);
-      if (aTouch || bTouch)
-      {
-        timerDisp->stop();
-        avController->signalTouch(aTouch, false, bTouch, false);
-      }
-      avController->updateSelfContact(selfContact(uStatus, FENCER_A),
-                                      selfContact(uStatus, FENCER_B));
-      break;
-
-    default:
-      break;
-  }
+  timerDisp->stop();
+  weaponModeChangesAllowed = false;
 }
 
-
+void handleUnoInterruptEnd()
+{
+  weaponModeChangesAllowed = true;
+}

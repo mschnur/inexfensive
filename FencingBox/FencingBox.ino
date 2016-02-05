@@ -27,7 +27,6 @@ Fencer fencerB = Fencer(FENCER_B);
 
 /******************************************************************************/
 
-
 void setup()
 {
   // init weapon modes
@@ -39,7 +38,7 @@ void setup()
   currentWeaponMode = epeeMode;
 
   // sets all internal variables to their defaults
-  reset(); 
+  reset();
 
   // allows detection and display implementations to do any required initialization
   setup_detection(currentWeaponMode->getType());
@@ -77,20 +76,19 @@ void display_signals()
   // if we are locked out than an an on target or off target touch has occurred
   if (locked_out)
   {
-    signal_touch(fencerA.touch,
+    signalTouch(fencerA.touch,
                  fencerA.off_target,
-                 fencerA.self_contact,
                  fencerB.touch,
-                 fencerB.off_target,
-                 fencerB.self_contact);
+                 fencerB.off_target);
 
     fencerA.self_contact_changed = false;
     fencerB.self_contact_changed = false;
     reset();
   }
-  else if (fencerA.self_contact_changed || fencerB.self_contact_changed)
+  
+  if (fencerA.self_contact_changed || fencerB.self_contact_changed)
   {
-    signal_self_contact(fencerA.self_contact, fencerB.self_contact);
+    updateSelfContact(fencerA.self_contact, fencerB.self_contact);
 
     fencerA.self_contact_changed = false;
     fencerB.self_contact_changed = false;

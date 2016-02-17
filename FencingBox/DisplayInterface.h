@@ -9,10 +9,6 @@
 #include "WProgram.h"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void setup_display();
 
 void signalTouch(boolean onTargetA, boolean offTargetA,
@@ -22,9 +18,9 @@ void updateSelfContact(boolean selfA, boolean selfB);
 
 void updateBreakInControlCircuit(boolean breakA, boolean breakB);
 
-#ifdef __cplusplus
-}
-#endif
+void lightTest();
+
+extern volatile boolean displayingTouch;
 
 #endif // #ifndef __INCLUDE_DISPLAY_INTERFACE_H__
 

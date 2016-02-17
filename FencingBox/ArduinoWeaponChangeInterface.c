@@ -6,19 +6,19 @@
 const uint8_t pin_changeWeapon = 2;
 
 /***************************** Internal Status ********************************/
-volatile boolean switchFlag;
+volatile uint8_t switchCount;
 
 /******************************************************************************/
 
 void weaponChangeISR()
 {
-  switchFlag = true;
+  ++switchCount;
 }
 
 void setupWeaponChange()
 {
   // initialize flag
-  switchFlag = false;
+  switchCount = 0;
 
   // setup pin on which interrupt signal will be received
   pinMode(pin_changeWeapon, INPUT);
@@ -27,14 +27,14 @@ void setupWeaponChange()
   attachInterrupt(digitalPinToInterrupt(pin_changeWeapon), weaponChangeISR, RISING);
 }
 
-boolean switchWeaponMode()
+uint8_t getSwitchWeaponModeCount()
 {
-  return switchFlag;
+  return switchCount;
 }
 
 void weaponModeChanged()
 {
-  switchFlag = false;
+  --switchCount;
 }
 
 

@@ -20,12 +20,11 @@
 
 /********************************* Includes ***********************************/
 /*
- * The two Timer library includes are needed because for a library's header to be
+ * This library needs to be included here because for a library's header to be
  * included in the header search path in other files, it must be included in the
  * main sketch file (this file).
  */
 #include <TimerOne.h>
-#include <TimerThree.h>
 
 #include <IRremote.h>
 #include "TimerDisplay.h"
@@ -38,11 +37,11 @@
 /********************************** Pins **************************************/
 const uint8_t weaponSelectPin = 20;
 const uint8_t unoInterruptPin = 2;
+const uint8_t unoWeaponChangeNotificationPin = 52;
 
 /******************************** Volatiles ***********************************/
 volatile boolean needToChangeWeaponMode = false;
-volatile boolean unoInterruptChanged = false;
-volatile uint8_t unoInterruptState = LOW;
+volatile boolean unoInterruptOccurred = false;
 
 /********************************** State *************************************/
 boolean weaponModeChangesAllowed = true;
@@ -53,6 +52,9 @@ ScoreDisplay * scoreDispA, * scoreDispB;
 WeaponModeDisplay * modeDisp;
 IRrecv irrecv(irReceiverPin);
 
+/********************************* Constants **********************************/
+// only process one weapon change every 1000 ms
+const uint16_t MIN_WEAPON_CHANGE_PERIOD_MS = 1000;
 
 /******************************************************************************/
 
@@ -72,9 +74,13 @@ void setup()
   pinMode(weaponSelectPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(weaponSelectPin), changeWeaponModeISR, RISING);
 
+  // set up pin for notifying Arduino Uno of weapon change
+  pinMode(unoWeaponChangeNotificationPin, OUTPUT);
+  digitalWrite(unoWeaponChangeNotificationPin, LOW);
+
   // set up interrupt from Arduino Uno
   pinMode(unoInterruptPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(unoInterruptPin), unoInterruptISR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(unoInterruptPin), unoInterruptISR, RISING);
 
   // initialize IR receiver
   irrecv.enableIRIn();  // Start the receiver
@@ -90,8 +96,7 @@ void changeWeaponModeISR()
 
 void unoInterruptISR()
 {
-  unoInterruptState = digitalRead(unoInterruptPin);
-  unoInterruptChanged = true;
+  unoInterruptOccurred = true;
 }
 
 void loop()
@@ -101,25 +106,20 @@ void loop()
     // make any updates to timer display as needed (based on whether the timer interupt has triggered or not)
     timerDisp->updateIfNeeded();
 
-    // check if an interrupt based on the Uno interrupt signal changing has occcurred
-    if (unoInterruptChanged)
+    // check if an interrupt from the Uno occcurred
+    if (unoInterruptOccurred)
     {
-      if (unoInterruptState == HIGH)
-      {
-        handleUnoInterruptStart();
-      }
-      else if (unoInterruptState == LOW)
-      {
-        handleUnoInterruptEnd();
-      }
+      handleUnoInterrupt();
     }
 
     decode_results  results;        // Somewhere to store the results of reading from the IR receiver
     static unsigned long timeOfLastHandledMessage = 0L;
-    boolean remoteSignaledWeaponChange = false;
+    static unsigned long timeOfLastHandledWeaponChange = 0L;
+
+    unsigned long now = millis();
+
     if (irrecv.decode(&results))  // Grab an IR code
     {
-      unsigned long now = millis();
       if (now - timeOfLastHandledMessage >= MIN_REMOTE_MESSAGE_PERIOD_MS)
       {
         timeOfLastHandledMessage = now;
@@ -169,13 +169,13 @@ void loop()
 
           case CHANGE_WEAPON_MODE:
             needToChangeWeaponMode = true;
-            remoteSignaledWeaponChange = true;
             break;
 
           default:
             // unrecognized value, do nothing
             break;
         }
+
         // prevents accidentally processing the same command twice
         results.value = 0;
       }
@@ -185,20 +185,25 @@ void loop()
     }
 
     // change weapon mode if need be
-    if (needToChangeWeaponMode && weaponModeChangesAllowed)
+    if (needToChangeWeaponMode)
     {
-      if (remoteSignaledWeaponChange)
+      // Don't allow weapon mode to be changed within 3 seconds of starting up.
+      // This is done because the weapon mode was randomly changing during startup
+      // some, but not all, of the time.  This solution seems to fix that problem.
+      // Also don't allow weapon mode to be changed more often than once every
+      // MIN_WEAPON_CHANGE_PERIOD_MS milliseconds
+      if (millis() < 3000 || now - timeOfLastHandledWeaponChange < MIN_WEAPON_CHANGE_PERIOD_MS)
       {
-        remoteSignaledWeaponChange = false;
-        detachInterrupt(digitalPinToInterrupt(weaponSelectPin));
-        pinMode(weaponSelectPin, OUTPUT);
-        digitalWrite(weaponSelectPin, HIGH);
-        delayMicroseconds(5);
-        digitalWrite(weaponSelectPin, LOW);
-        pinMode(weaponSelectPin, INPUT);
-        attachInterrupt(digitalPinToInterrupt(weaponSelectPin), changeWeaponModeISR, RISING);
+        needToChangeWeaponMode = false;
       }
-      changeWeaponMode();
+      else
+      {
+        timeOfLastHandledWeaponChange = now;
+        digitalWrite(unoWeaponChangeNotificationPin, HIGH);
+        delayMicroseconds(50);
+        digitalWrite(unoWeaponChangeNotificationPin, LOW);
+        changeWeaponMode();
+      }
     }
   }
 }
@@ -209,13 +214,8 @@ void changeWeaponMode()
   needToChangeWeaponMode = false;
 }
 
-void handleUnoInterruptStart()
+void handleUnoInterrupt()
 {
   timerDisp->stop();
-  weaponModeChangesAllowed = false;
-}
-
-void handleUnoInterruptEnd()
-{
-  weaponModeChangesAllowed = true;
+  unoInterruptOccurred = false;
 }

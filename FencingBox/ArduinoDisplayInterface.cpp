@@ -3,12 +3,13 @@
 
 /********************************* Includes ***********************************/
 #include <SPI.h>
+#include <TimerOne.h>
 #include "DisplayInterface.h"
 
 
 /******************************** Constants ***********************************/
-const uint16_t BUZZER_TIME_MS = 1000;
-const uint16_t LIGHT_AFTER_BUZZER_TIME_MS = 2000;
+const unsigned long LIGHT_AFTER_BUZZER_TIME_US = 2000000;
+const unsigned long BUZZER_TIME_US = 1000000;
 
 /*********************************** Pins *************************************/
 const uint8_t pinSRData = 11; // shift register data pin (SPI MOSI pin)
@@ -22,19 +23,21 @@ const uint8_t pinInterruptMega = 4; // pin to signal to the mega that the other 
 typedef uint8_t SRData;
 const SRData CLEAR = 0;
 
-const SRData OFF_TARGET_A_BIT = 0;
-const SRData ON_TARGET_A_BIT = 1;
-const SRData SELF_CONTACT_A_BIT = 2;
+const SRData BUZZER_BIT = 0;
 
+const SRData SELF_CONTACT_B_BIT = 1;
+const SRData ON_TARGET_B_BIT = 2;
 const SRData OFF_TARGET_B_BIT = 3;
-const SRData ON_TARGET_B_BIT = 4;
-const SRData SELF_CONTACT_B_BIT = 5;
 
-const SRData BUZZER_BIT = 6;
+const SRData SELF_CONTACT_A_BIT = 4;
+const SRData ON_TARGET_A_BIT = 5;
+const SRData OFF_TARGET_A_BIT = 6;
 
 SRData currentState = CLEAR;
 
 /******************************************************************************/
+
+volatile boolean displayingTouch = false;
 
 void setTouchLEDStateInSR(boolean onTargetA, boolean offTargetA,
                           boolean onTargetB, boolean offTargetB);
@@ -59,10 +62,66 @@ void setup_display()
   digitalWrite(pinSRNotClear, HIGH);
   digitalWrite(pinInterruptMega, LOW);
 
+  // setup TimerOne
+  Timer1.initialize();
+  Timer1.stop();
+
   // settings are based on SN74HC595N shift register specs
-//  SPI.beginTransaction(SPISettings(25000000, LSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(25000000, LSBFIRST, SPI_MODE0));
   setSRState(currentState);
 }
+
+// FOR DEBUG PURPOSES ONLY! Tests the functionality and order of the LED arrays and speaker
+//  via the shift register.
+void lightTest()
+{
+  while (true)
+  {
+    digitalWrite(pinSRLatch, LOW);
+    SPI.transfer(0);
+    digitalWrite(pinSRLatch, HIGH);
+    delay(1000);
+    for (uint8_t i = 0; i < 8; i++)
+    {
+      uint8_t shiftVal = 0;
+      bitSet(shiftVal, i);
+      digitalWrite(pinSRLatch, LOW);
+      SPI.transfer(shiftVal);
+      digitalWrite(pinSRLatch, HIGH);
+      delay(1000);
+    }
+  }
+}
+
+void disableTouchLightsISR()
+{
+  // turn off the lights
+  setTouchLEDStateInSR(LOW, LOW, LOW, LOW);
+
+  // also lower the interrupt signal, since the displaying the touch is now finished
+  digitalWrite(pinInterruptMega, LOW);
+
+  // indicate that we are done displaying a touch internally (so FencingBox.ino can see it)
+  displayingTouch = false;
+  
+  Timer1.stop();
+  Timer1.detachInterrupt();
+}
+
+void disableBuzzerISR()
+{
+  // turn off the buzzer
+  setBuzzerStateInSR(LOW);
+
+  // set up an interrupt to call disableTouchLightsISR() in LIGHT_AFTER_BUZZER_TIME_US
+  // microseconds (2 sec)
+  Timer1.attachInterrupt(disableTouchLightsISR,
+                         LIGHT_AFTER_BUZZER_TIME_US);
+  Timer1.resume();
+}
+
+
+
 
 void signalTouch(boolean onTargetA, boolean offTargetA,
                  boolean onTargetB, boolean offTargetB)
@@ -76,11 +135,14 @@ void signalTouch(boolean onTargetA, boolean offTargetA,
     return;
   }
 
-  // interrupt the Arduino Mega to let it know to stop the timer and to not allow
-  // any weapon changes while the touch is being displayed.  Since the interrupt
-  // is caused on the rising edge, this signal can be (and is) kept high until
-  // displaying this touch is completed.
+  // interrupt the Arduino Mega to let it know to stop the timer.  This 
+  // signal is kept high until displaying this touch is completed, because
+  // the way it is handled in the Mega allows this, and it guarantees the Mega
+  // will not miss this signal.
   digitalWrite(pinInterruptMega, HIGH);
+
+  // indicate that we are displaying a touch internally (so FencingBox.ino can see it)
+  displayingTouch = true;
 
   SRData newState = currentState;
   // set the on and off target outputs according to the parameters
@@ -88,25 +150,15 @@ void signalTouch(boolean onTargetA, boolean offTargetA,
   bitWrite(newState, OFF_TARGET_A_BIT, offTargetA);
   bitWrite(newState, ON_TARGET_B_BIT, onTargetB);
   bitWrite(newState, OFF_TARGET_B_BIT, offTargetB);
-  
+
   // buzzer must also go off on a touch (on or off target), so set bit high
   bitWrite(newState, BUZZER_BIT, HIGH);
   setSRState(newState);
-  
-  // delay until the buzzer needs to be turned off (1 second)
-  delay(BUZZER_TIME_MS);
 
-  // then turn off the buzzer
-  setBuzzerStateInSR(LOW);
-
-  // now delay until the lights need to be turned off (2 seconds)
-  delay(LIGHT_AFTER_BUZZER_TIME_MS);
-
-  // then turn off the lights
-  setTouchLEDStateInSR(LOW, LOW, LOW, LOW);
-
-  // also lower the interrupt signal, since the displaying the touch is now finished
-  digitalWrite(pinInterruptMega, LOW);
+  // set up an interrupt to call disableBuzzer() in BUZZER_TIME_US microseconds (1 sec)
+  Timer1.attachInterrupt(disableBuzzerISR,
+                         BUZZER_TIME_US);
+  Timer1.resume();
 }
 
 void updateSelfContact(boolean selfA, boolean selfB)
@@ -146,8 +198,7 @@ void setBuzzerStateInSR(boolean buzzerOn)
 void setSRState(SRData newState)
 {
   digitalWrite(pinSRLatch, LOW);
-  shiftOut(pinSRData, pinSRClock, LSBFIRST, newState);
-//  SPI.transfer(newState);
+  SPI.transfer(newState);
   digitalWrite(pinSRLatch, HIGH);
   currentState = newState;
 }

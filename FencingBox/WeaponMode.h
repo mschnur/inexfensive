@@ -58,7 +58,7 @@ class FoilMode : public WeaponMode
     }
 
   private:
-    void updateFencerStatus(Fencer& fencer);
+    void updateFencerStatus(Fencer& fencer, unsigned long now, int * lineValArray);
 };
 
 class SaberMode : public WeaponMode
@@ -74,7 +74,7 @@ class SaberMode : public WeaponMode
     }
 
   private:
-    void updateFencerStatus(Fencer& fencer);
+    void updateFencerStatus(Fencer& fencer, unsigned long now, int * lineValArray);
 };
 
 #endif // #ifndef __INCLUDE_WEAPON_MODE_H__

@@ -17,7 +17,7 @@ const uint8_t pinSRClock = 13; // shift register clock pin (SPI SCK pin)
 const uint8_t pinSRLatch = 10; // shift register latch pin (SPI SS pin)
 const uint8_t pinSRNotClear = 12; // shift register !clear (clear, but active low) pin (digital)
 
-const uint8_t pinInterruptMega = 4; // pin to signal to the mega that the other 6 pins are set
+const uint8_t pinInterruptMega = 1; // pin to signal to the mega that the other 6 pins are set
 
 /****************************** Shift Register ********************************/
 typedef uint8_t SRData;
@@ -202,7 +202,3 @@ void setSRState(SRData newState)
   digitalWrite(pinSRLatch, HIGH);
   currentState = newState;
 }
-
-
-
-

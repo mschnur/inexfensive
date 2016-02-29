@@ -32,6 +32,8 @@ static const uint8_t mTen_p2 = 35;
 static const uint8_t mTen_p3 = 33;
 
 static const uint8_t timeRemaining_pin = 50;
+
+static const uint8_t colonBlinkEnable_pin = A13;
 /******************************************************************************/
 
 // TimerDisplay declared here so it can be used as a freind class in Time

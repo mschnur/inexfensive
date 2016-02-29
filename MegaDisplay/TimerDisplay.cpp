@@ -16,24 +16,37 @@ void TimerDisplay::init()
   Timer1.attachInterrupt(&TimerDisplay::timerInterrupt);
   displayTime(currentTime);
   pinMode(timeRemaining_pin, OUTPUT);
+  pinMode(colonBlinkEnable_pin, OUTPUT);
   digitalWrite(timeRemaining_pin, HIGH);
+  digitalWrite(colonBlinkEnable_pin, LOW);
 }
 
 void TimerDisplay::start()
 {
-  // receive an interrupt every 100 ms
-  //  Timer1.attachInterrupt(&TimerDisplay::timerInterrupt);
-  Timer1.start();
+  if (stopped)
+  {
+    // receive an interrupt every 100 ms
+    Timer1.start();
 
-  stopped = false;
+    // make colon start blinking
+    digitalWrite(colonBlinkEnable_pin, HIGH);
+
+    // change internal state to started
+    stopped = false;
+  }
 }
 
 void TimerDisplay::stop()
 {
   if (!stopped)
   {
+    // stop receiving interrupts every 100 ms
     Timer1.stop();
-    //    Timer1.detachInterrupt();
+
+    // make colon stop blinking
+    digitalWrite(colonBlinkEnable_pin, LOW);
+
+    // change internal state to stopped
     stopped = true;
   }
 }
@@ -146,7 +159,7 @@ void TimerDisplay::updateIfNeeded()
     interruptHandled = true;
     unsigned long localRemainingTime;
 
-    // get the remainingTimeMillis (must be accessed with interrupts disabled since it is a multibyte value
+    // get the remainingTimeMillis (must be accessed with interrupts disabled since it is a multibyte value)
     noInterrupts();
     localRemainingTime = remainingTimeMillis;
     interrupts();

@@ -114,9 +114,14 @@ void TimerDisplay::increaseResetValueAndReset()
 
 void TimerDisplay::decreaseResetValueAndReset()
 {
-  // decrease the reset value by one minute
+  /* decrease the reset value by one minute */
+  
   bool timeDecreased = true;
-  if (resetValue.mOnes > 0)
+
+  // decrease the minutes ones column only if it will not result
+  // in 0 minutes being the new reset value
+  if (resetValue.mOnes > 1
+      || (resetValue.mTens > 0 && resetValue.mOnes == 1))
   {
     resetValue.mOnes--;
   }
@@ -125,7 +130,7 @@ void TimerDisplay::decreaseResetValueAndReset()
     resetValue.mTens--;
     resetValue.mOnes = 9;
   }
-  else  // can't decrease minutes below 0, so don't actually decrement any values in this case
+  else  // don't decrease minutes below 1, so don't actually decrement any values in this case
   {
     timeDecreased = false;
   }

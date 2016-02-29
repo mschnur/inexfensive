@@ -7,6 +7,7 @@
  */
 #include <SPI.h>
 #include <TimerOne.h>
+#include <digitalWriteFast.h>
 
 #include "DetectionInterface.h"
 #include "DisplayInterface.h"

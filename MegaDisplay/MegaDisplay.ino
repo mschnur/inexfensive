@@ -130,27 +130,45 @@ void loop()
         switch (results.value)
         {
           case FENCER_A_SCORE_INCREASE:
+            // stop the timer if it is not already stopped
+            timerDisp->stop();
+            // then increase fencer A's score
             scoreDispA->increaseScore();
             break;
 
           case FENCER_A_SCORE_DECREASE:
+            // stop the timer if it is not already stopped
+            timerDisp->stop();
+            // then decrease fencer A's score
             scoreDispA->decreaseScore();
             break;
 
           case FENCER_B_SCORE_INCREASE:
+            // stop the timer if it is not already stopped
+            timerDisp->stop();
+            // then increase fencer B's score
             scoreDispB->increaseScore();
             break;
 
           case FENCER_B_SCORE_DECREASE:
+            // stop the timer if it is not already stopped
+            timerDisp->stop();
+            // then decrease fencer B's score
             scoreDispB->decreaseScore();
             break;
 
           case DOUBLE_TOUCH:
+            // stop the timer if it is not already stopped
+            timerDisp->stop();
+            // then increase both scores by 1
             scoreDispA->increaseScore();
             scoreDispB->increaseScore();
             break;
 
           case ZERO_SCORES:
+            // stop the timer if it is not already stopped
+            timerDisp->stop();
+            // then set both scores to zero
             scoreDispA->zeroScore();
             scoreDispB->zeroScore();
             break;

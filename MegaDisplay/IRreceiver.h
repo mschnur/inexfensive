@@ -6,8 +6,8 @@
 const uint8_t irReceiverPin = 48;
 
 /********************************* Constants **********************************/
-// only process one remote command every 250 ms
-const uint8_t MIN_REMOTE_MESSAGE_PERIOD_MS = 250;
+// only process one remote command every 500 ms
+const uint16_t MIN_REMOTE_MESSAGE_PERIOD_MS = 500;
 
 /*************************** Remote Button Values *****************************/
 // fencer A score

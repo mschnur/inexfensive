@@ -20,7 +20,8 @@
 /***************************** Internal Status ********************************/
 WeaponMode * currentWeaponMode;
 
-boolean locked_out;
+boolean lockedOut;
+boolean timeLeftLastIteration = false;
 
 /******************************* Weapon Modes *********************************/
 // initialized in setup()
@@ -33,7 +34,7 @@ Fencer fencerA = Fencer(FENCER_A);
 Fencer fencerB = Fencer(FENCER_B);
 
 /********************************* Defines ************************************/
-#define FASTADC 1
+#define FASTADC 1 // 1 is enabled, 0 is disabled
 
 // defines for setting and clearing register bits
 #ifndef cbi
@@ -54,7 +55,7 @@ void setup()
    * It seems that the ADC prescaler can be changed to decrease the time required for each analogRead, at
    * the cost of some accuracy on the reads.  It appears from the above sources that this loss of accuracy
    * is very minor if the prescaler is not decreased too much.  As such, I am decreasing the prescaler
-   * by two levels, from the default 128 to 32.  I referenced Table 24-5 from page 250 of the ATmega328P 
+   * by two levels, from the default 128 to 32.  I referenced Table 24-5 from page 250 of the ATmega328P
    * (the chip in the Arduino Uno) datasheet, which can be found here:
    * http://www.atmel.com/images/atmel-8271-8-bit-avr-microcontroller-atmega48a-48pa-88a-88pa-168a-168pa-328-328p_datasheet_complete.pdf
    */
@@ -81,7 +82,7 @@ void setup()
   setup_display();
   setupWeaponChange();
 
-//  lightTest();
+  //  lightTest();
 }
 
 void loop()
@@ -97,11 +98,31 @@ void loop()
       switchWeapons();
     }
 
-    // if there is time remaining in the match and we are not in the process of diplaying a touch
-    if (timeIsLeft() && !displayingTouch)
+    // if there is time remaining in the match
+    if (timeIsLeft())
     {
-      // detect state changes during this iteration
-      currentWeaponMode->updateStatus(fencerA, fencerB, locked_out);
+      // store that this iteration, there was time left on the timer
+      timeLeftLastIteration = true;
+      
+      // if we are not in the process of diplaying a touch
+      if (!displayingTouch)
+      {
+        // detect state changes during this iteration
+        currentWeaponMode->updateStatus(fencerA, fencerB, lockedOut);
+      }
+    }
+    else // no time remaining
+    {
+      // if this is the first iteration that there is no time left (determined by
+      // the fact that last iteration there WAS time left), then signal that time
+      // has expired.
+      if (timeLeftLastIteration)
+      {
+        signalTimeExpired();
+      }
+      
+      // store that this iteration, there wasn't any time left on the timer
+      timeLeftLastIteration = false;
     }
 
     // display any signals (visual or audio), as needed for the current state
@@ -118,15 +139,15 @@ void display_signals()
     fencerA.self_contact_changed = false;
     fencerB.self_contact_changed = false;
   }
-  
+
   // if we are locked out than an an on target or off target touch has occurred
-  if (locked_out)
+  if (lockedOut)
   {
     signalTouch(fencerA.touch,
                 fencerA.off_target,
                 fencerB.touch,
                 fencerB.off_target);
-                
+
     reset();
   }
 }
@@ -137,7 +158,7 @@ void reset()
   fencerA.reset();
   fencerB.reset();
   // make sure we are no longer locked out
-  locked_out = false;
+  lockedOut = false;
 }
 
 void switchWeapons()

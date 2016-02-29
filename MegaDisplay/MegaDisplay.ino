@@ -38,6 +38,7 @@
 const uint8_t weaponSelectPin = 20;
 const uint8_t unoInterruptPin = 2;
 const uint8_t unoWeaponChangeNotificationPin = 52;
+const uint8_t unoWeaponChangeConfirmationPin = A0;
 
 /******************************** Volatiles ***********************************/
 volatile boolean needToChangeWeaponMode = false;
@@ -74,9 +75,12 @@ void setup()
   pinMode(weaponSelectPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(weaponSelectPin), changeWeaponModeISR, RISING);
 
-  // set up pin for notifying Arduino Uno of weapon change
+  // set up pin for notifying Arduino Uno of weapon change (as well as the confirmation pin,
+  // which is used to try and prevent any unexpected interrupts from being registered)
   pinMode(unoWeaponChangeNotificationPin, OUTPUT);
+  pinMode(unoWeaponChangeConfirmationPin, OUTPUT);
   digitalWrite(unoWeaponChangeNotificationPin, LOW);
+  digitalWrite(unoWeaponChangeConfirmationPin, LOW);
 
   // set up interrupt from Arduino Uno
   pinMode(unoInterruptPin, INPUT);
@@ -199,9 +203,12 @@ void loop()
       else
       {
         timeOfLastHandledWeaponChange = now;
+        digitalWrite(unoWeaponChangeConfirmationPin, HIGH);
         digitalWrite(unoWeaponChangeNotificationPin, HIGH);
-        delayMicroseconds(50);
+        delayMicroseconds(75); // time for the interrupt to be registered
         digitalWrite(unoWeaponChangeNotificationPin, LOW);
+        delayMicroseconds(75); // time for the confirmation pin to be read on the Uno
+        digitalWrite(unoWeaponChangeConfirmationPin, LOW);
         changeWeaponMode();
       }
     }

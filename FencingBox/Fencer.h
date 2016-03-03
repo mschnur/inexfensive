@@ -60,7 +60,6 @@ class Fencer
     {
       touch = false;
       off_target = false;
-      self_contact = false;
 
       depress_time_micros = 0L;
       whipover_time_micros = 0L;

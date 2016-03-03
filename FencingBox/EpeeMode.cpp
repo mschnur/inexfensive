@@ -56,6 +56,13 @@ void EpeeMode::updateFencerStatus(Fencer& fencer)
       fencer.depressed_on_target = false;
     }
   }
+
+  // make sure fencer is not marked as in self contact
+  if (fencer.self_contact)
+  {
+    fencer.self_contact = false;
+    fencer.self_contact_changed = true;
+  }
 }
 
 

@@ -16,18 +16,20 @@ void FoilMode::updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_locke
     out_lockedOut = true;
   }
 
-  updateFencerStatus(fencerA);
-  updateFencerStatus(fencerB);
+  int lineValArray[6];
+  readLines(lineValArray);
+  updateFencerStatus(fencerA, now, lineValArray);
+  updateFencerStatus(fencerB, now, lineValArray);
 }
 
-void FoilMode::updateFencerStatus(Fencer& fencer)
+void FoilMode::updateFencerStatus(Fencer& fencer, unsigned long now, int * lineValArray)
 {
   FencerStatus fStatus;
-
+  
   // get fencer's status
   // This is gotten here because even if fencer has already registered a touch I need to update
   //  whether or not fencer is touching self, so I need this status every iteration.
-  fStatus = get_fencer_status(fencer.side, FOIL);
+  fStatus = get_fencer_status(fencer.side, FOIL, lineValArray);
 
   // first check for the status of fencer
   // don't check fencer if they have already registered a touch (on or off target)
@@ -40,7 +42,7 @@ void FoilMode::updateFencerStatus(Fencer& fencer)
       if (fencer.depressed_on_target)
       {
         // fencer has had their tip depressed for long enough, register fencer's touch as valid.
-        if (get_current_time_micros() - fencer.depress_time_micros >= FOIL_DEPRESS_US)
+        if (now - fencer.depress_time_micros >= FOIL_DEPRESS_US)
         {
           fencer.touch = true;
         }
@@ -49,7 +51,7 @@ void FoilMode::updateFencerStatus(Fencer& fencer)
       // waiting for the depress time minimum can start
       else
       {
-        fencer.depress_time_micros = get_current_time_micros();
+        fencer.depress_time_micros = now;
         fencer.depressed_on_target = true;
 
         // if fencer was previously waiting for an off target touch to register, reset
@@ -64,7 +66,7 @@ void FoilMode::updateFencerStatus(Fencer& fencer)
       if (fencer.depressed_off_target)
       {
         // fencer has had their tip depressed for long enough, register fencer's touch as valid.
-        if (get_current_time_micros() - fencer.depress_time_micros >= FOIL_DEPRESS_US)
+        if (now - fencer.depress_time_micros >= FOIL_DEPRESS_US)
         {
           fencer.off_target = true;
         }
@@ -73,7 +75,7 @@ void FoilMode::updateFencerStatus(Fencer& fencer)
       // waiting for the depress time minimum can start
       else
       {
-        fencer.depress_time_micros = get_current_time_micros();
+        fencer.depress_time_micros = now;
         fencer.depressed_off_target = true;
 
         // if fencer was previously waiting for an on target touch to register, reset

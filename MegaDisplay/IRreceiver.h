@@ -3,7 +3,7 @@
 
 /*********************************** Pins *************************************/
 // Left Score Display
-const uint8_t irReceiverPin = 52;
+const uint8_t irReceiverPin = 48;
 
 /********************************* Constants **********************************/
 // only process one remote command every 250 ms
@@ -11,12 +11,12 @@ const uint8_t MIN_REMOTE_MESSAGE_PERIOD_MS = 250;
 
 /*************************** Remote Button Values *****************************/
 // fencer A score
-const unsigned long FENCER_A_SCORE_INCREASE = 0xF2D0D2;
-const unsigned long FENCER_A_SCORE_DECREASE = 0xF2C0D3;
+const unsigned long FENCER_A_SCORE_INCREASE = 0xF2F0D0;
+const unsigned long FENCER_A_SCORE_DECREASE = 0xF2E0D1;
 
 // fencer B score
-const unsigned long FENCER_B_SCORE_INCREASE = 0xF2F0D0;
-const unsigned long FENCER_B_SCORE_DECREASE = 0xF2E0D1;
+const unsigned long FENCER_B_SCORE_INCREASE = 0xF2D0D2;
+const unsigned long FENCER_B_SCORE_DECREASE = 0xF2C0D3;
 
 // both scores
 const unsigned long DOUBLE_TOUCH = 0xE3A1C5;

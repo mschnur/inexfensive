@@ -13,7 +13,7 @@ extern "C" {
 
 void setupWeaponChange();
 
-boolean switchWeaponMode();
+uint8_t getSwitchWeaponModeCount();
 
 void weaponModeChanged();
 

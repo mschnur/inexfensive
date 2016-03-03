@@ -9,10 +9,6 @@
 
 #include "FencingTypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef uint8_t FencerStatus;
 
 const FencerStatus NO_CONTACT = 0;
@@ -26,6 +22,10 @@ unsigned long get_current_time_micros();
 boolean timeIsLeft();
 
 FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon);
+
+void readLines(/* must be int[6] ---> */ int * line_val_array);
+
+FencerStatus get_fencer_status(FencerSide fencer, WeaponType weapon, int * lineValArray);
 
 inline boolean in_contact_on_target(FencerStatus fStatus)
 {
@@ -49,9 +49,7 @@ inline boolean in_blade_contact(FencerStatus fStatus)
 
 void setup_detection(WeaponType weapon);
 
-#ifdef __cplusplus
-}
-#endif
+void setupNewWeapon(WeaponType weapon);
 
 #endif // #ifndef __INCLUDE_DETECTION_INTERFACE_H__
 

@@ -20,12 +20,11 @@
 
 /********************************* Includes ***********************************/
 /*
- * The two Timer library includes are needed because for a library's header to be
+ * This library needs to be included here because for a library's header to be
  * included in the header search path in other files, it must be included in the
  * main sketch file (this file).
  */
 #include <TimerOne.h>
-#include <TimerThree.h>
 
 #include <IRremote.h>
 #include "TimerDisplay.h"
@@ -33,35 +32,35 @@
 #include "FencingTypes.h"
 #include "WeaponModeDisplay.h"
 #include "IRreceiver.h"
-#include "AudioVisualController.h"
-#include "UnoReader.h"
 #include "FencingTypes.h"
 
 /********************************** Pins **************************************/
-const uint8_t weaponSelectPin = 2;
+const uint8_t weaponSelectPin = 20;
+const uint8_t unoInterruptPin = 2;
+const uint8_t unoWeaponChangeNotificationPin = 52;
+const uint8_t unoWeaponChangeConfirmationPin = A0;
 
 /******************************** Volatiles ***********************************/
 volatile boolean needToChangeWeaponMode = false;
+volatile boolean unoInterruptOccurred = false;
+
+/********************************** State *************************************/
+boolean weaponModeChangesAllowed = true;
 
 /******************************* I/O Objects **********************************/
 TimerDisplay * timerDisp;
 ScoreDisplay * scoreDispA, * scoreDispB;
 WeaponModeDisplay * modeDisp;
-AudioVisualController * avController;
-UnoReader * unoReader;
 IRrecv irrecv(irReceiverPin);
 
+/********************************* Constants **********************************/
+// only process one weapon change every 1000 ms
+const uint16_t MIN_WEAPON_CHANGE_PERIOD_MS = 1000;
 
 /******************************************************************************/
 
 void setup()
 {
-  // set up interrupt for input from the Arduino Uno
-  unoReader = &UnoReader::getInstance();
-
-  // set up controller for displaying a touch
-  avController = &AudioVisualController::getInstance();
-
   // initialize score displays
   scoreDispA = &ScoreDisplay::getInstance(FENCER_A);
   scoreDispB = &ScoreDisplay::getInstance(FENCER_B);
@@ -76,6 +75,17 @@ void setup()
   pinMode(weaponSelectPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(weaponSelectPin), changeWeaponModeISR, RISING);
 
+  // set up pin for notifying Arduino Uno of weapon change (as well as the confirmation pin,
+  // which is used to try and prevent any unexpected interrupts from being registered)
+  pinMode(unoWeaponChangeNotificationPin, OUTPUT);
+  pinMode(unoWeaponChangeConfirmationPin, OUTPUT);
+  digitalWrite(unoWeaponChangeNotificationPin, LOW);
+  digitalWrite(unoWeaponChangeConfirmationPin, LOW);
+
+  // set up interrupt from Arduino Uno
+  pinMode(unoInterruptPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(unoInterruptPin), unoInterruptISR, RISING);
+
   // initialize IR receiver
   irrecv.enableIRIn();  // Start the receiver
 
@@ -88,6 +98,11 @@ void changeWeaponModeISR()
   needToChangeWeaponMode = true;
 }
 
+void unoInterruptISR()
+{
+  unoInterruptOccurred = true;
+}
+
 void loop()
 {
   while (1)
@@ -95,18 +110,20 @@ void loop()
     // make any updates to timer display as needed (based on whether the timer interupt has triggered or not)
     timerDisp->updateIfNeeded();
 
-    // check if the uno has an update for us
-    if (unoReader->unoUpdateAvailable())
+    // check if an interrupt from the Uno occcurred
+    if (unoInterruptOccurred)
     {
-      handleUnoUpdate();
+      handleUnoInterrupt();
     }
 
-    decode_results  results;        // Somewhere to store the results
+    decode_results  results;        // Somewhere to store the results of reading from the IR receiver
     static unsigned long timeOfLastHandledMessage = 0L;
-    boolean remoteSignaledWeaponChange = false;
+    static unsigned long timeOfLastHandledWeaponChange = 0L;
+
+    unsigned long now = millis();
+
     if (irrecv.decode(&results))  // Grab an IR code
     {
-      unsigned long now = millis();
       if (now - timeOfLastHandledMessage >= MIN_REMOTE_MESSAGE_PERIOD_MS)
       {
         timeOfLastHandledMessage = now;
@@ -156,13 +173,13 @@ void loop()
 
           case CHANGE_WEAPON_MODE:
             needToChangeWeaponMode = true;
-            remoteSignaledWeaponChange = true;
             break;
 
           default:
             // unrecognized value, do nothing
             break;
         }
+
         // prevents accidentally processing the same command twice
         results.value = 0;
       }
@@ -172,20 +189,28 @@ void loop()
     }
 
     // change weapon mode if need be
-    if (needToChangeWeaponMode == true)
+    if (needToChangeWeaponMode)
     {
-      if (remoteSignaledWeaponChange)
+      // Don't allow weapon mode to be changed within 3 seconds of starting up.
+      // This is done because the weapon mode was randomly changing during startup
+      // some, but not all, of the time.  This solution seems to fix that problem.
+      // Also don't allow weapon mode to be changed more often than once every
+      // MIN_WEAPON_CHANGE_PERIOD_MS milliseconds
+      if (millis() < 3000 || now - timeOfLastHandledWeaponChange < MIN_WEAPON_CHANGE_PERIOD_MS)
       {
-        remoteSignaledWeaponChange = false;
-        detachInterrupt(digitalPinToInterrupt(weaponSelectPin));
-        pinMode(weaponSelectPin, OUTPUT);
-        digitalWrite(weaponSelectPin, HIGH);
-        delayMicroseconds(5);
-        digitalWrite(weaponSelectPin, LOW);
-        pinMode(weaponSelectPin, INPUT);
-        attachInterrupt(digitalPinToInterrupt(weaponSelectPin), changeWeaponModeISR, RISING);
+        needToChangeWeaponMode = false;
       }
-      changeWeaponMode();
+      else
+      {
+        timeOfLastHandledWeaponChange = now;
+        digitalWrite(unoWeaponChangeConfirmationPin, HIGH);
+        digitalWrite(unoWeaponChangeNotificationPin, HIGH);
+        delayMicroseconds(75); // time for the interrupt to be registered
+        digitalWrite(unoWeaponChangeNotificationPin, LOW);
+        delayMicroseconds(75); // time for the confirmation pin to be read on the Uno
+        digitalWrite(unoWeaponChangeConfirmationPin, LOW);
+        changeWeaponMode();
+      }
     }
   }
 }
@@ -196,69 +221,8 @@ void changeWeaponMode()
   needToChangeWeaponMode = false;
 }
 
-void handleUnoUpdate()
+void handleUnoInterrupt()
 {
-  UnoStatus uStatus = unoReader->getUnoStatus();
-  WeaponType currentType = modeDisp->getCurrentMode();
-  boolean aTouch, bTouch;
-  Serial.print("Uno Update: ");
-  Serial.print("   onTargetA[");
-  Serial.print(onTarget(uStatus, FENCER_A));
-  Serial.print("], offTargetA[");
-  Serial.print(offTarget(uStatus, FENCER_A));
-  Serial.print("], selfContactA[");
-  Serial.print(selfContact(uStatus, FENCER_A));
-  Serial.print("]\n");
-  Serial.print("   onTargetB[");
-  Serial.print(onTarget(uStatus, FENCER_B));
-  Serial.print("], offTargetB[");
-  Serial.print(offTarget(uStatus, FENCER_B));
-  Serial.print("], selfContactB[");
-  Serial.print(selfContact(uStatus, FENCER_B));
-  Serial.print("]\n");
-  Serial.print("   mode[");
-  Serial.print(((currentType == EPEE) ? ("EPEE") : ((currentType == FOIL) ? ("FOIL") : ("SABER"))));
-  Serial.print("]\n");
-  switch (currentType)
-  {
-    case EPEE:
-      aTouch = onTarget(uStatus, FENCER_A);
-      bTouch = onTarget(uStatus, FENCER_B);
-      if (aTouch || bTouch)
-      {
-        timerDisp->stop();
-        avController->signalTouch(aTouch, false, bTouch, false);
-      }
-      break;
-
-    case FOIL:
-      if (touchOccurred(uStatus))
-      {
-        timerDisp->stop();
-        avController->signalTouch(onTarget(uStatus, FENCER_A),
-                                  offTarget(uStatus, FENCER_A),
-                                  onTarget(uStatus, FENCER_B),
-                                  offTarget(uStatus, FENCER_B));
-      }
-      avController->updateSelfContact(selfContact(uStatus, FENCER_A),
-                                      selfContact(uStatus, FENCER_B));
-      break;
-
-    case SABER:
-      aTouch = onTarget(uStatus, FENCER_A);
-      bTouch = onTarget(uStatus, FENCER_B);
-      if (aTouch || bTouch)
-      {
-        timerDisp->stop();
-        avController->signalTouch(aTouch, false, bTouch, false);
-      }
-      avController->updateSelfContact(selfContact(uStatus, FENCER_A),
-                                      selfContact(uStatus, FENCER_B));
-      break;
-
-    default:
-      break;
-  }
+  timerDisp->stop();
+  unoInterruptOccurred = false;
 }
-
-

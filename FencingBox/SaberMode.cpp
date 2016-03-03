@@ -16,18 +16,20 @@ void SaberMode::updateStatus(Fencer& fencerA, Fencer& fencerB, boolean& out_lock
     out_lockedOut = true;
   }
 
-  updateFencerStatus(fencerA);
-  updateFencerStatus(fencerB);
+  int lineValArray[6];
+  readLines(lineValArray);
+  updateFencerStatus(fencerA, now, lineValArray);
+  updateFencerStatus(fencerB, now, lineValArray);
 }
 
-void SaberMode::updateFencerStatus(Fencer& fencer)
+void SaberMode::updateFencerStatus(Fencer& fencer, unsigned long now, int * lineValArray)
 {
   FencerStatus fStatus;
 
   // get fencer's status
   // This is gotten here because even if fencer has already registered a touch I need to update
   //  whether or not fencer is touching self, so I need this status every iteration.
-  fStatus = get_fencer_status(fencer.side, SABER);
+  fStatus = get_fencer_status(fencer.side, SABER, lineValArray);
 
   /* Start of whipover protection handling */
   // if already in whipover protection state
@@ -56,7 +58,7 @@ void SaberMode::updateFencerStatus(Fencer& fencer)
 
     // if whipover protection state has entered period of time during which touches are
     // disallowed
-    if (get_current_time_micros() - fencer.whipover_time_micros >= WHIPOVER_LOCKOUT_US)
+    if (now - fencer.whipover_time_micros >= WHIPOVER_LOCKOUT_US)
     {
       // store that touches are not allowed
       fencer.touchesAllowed = false;
@@ -74,7 +76,7 @@ void SaberMode::updateFencerStatus(Fencer& fencer)
     /*
     Whipover protection state should end if 15 ms passes
     */
-    if (get_current_time_micros() - fencer.whipover_time_micros >= WHIPOVER_TIMEOUT_US)
+    if (now - fencer.whipover_time_micros >= WHIPOVER_TIMEOUT_US)
     {
       // end whipover protection and allow touches (in case they weren't already)
       fencer.inWhipoverProtection = false;
@@ -91,7 +93,7 @@ void SaberMode::updateFencerStatus(Fencer& fencer)
       fencer.inWhipoverProtection = true;
 
       // store whipover protection start time
-      fencer.whipover_time_micros = get_current_time_micros();
+      fencer.whipover_time_micros = now;
 
       // store 0 as number of times blade contact has been interrupted during whipover
       // protection state
@@ -116,7 +118,7 @@ void SaberMode::updateFencerStatus(Fencer& fencer)
       if (fencer.depressed_on_target)
       {
         // fencer has had their weapon in contact for long enough, register fencer's touch as valid.
-        if (get_current_time_micros() - fencer.depress_time_micros >= SABER_DEPRESS_US)
+        if (now - fencer.depress_time_micros >= SABER_DEPRESS_US)
         {
           fencer.touch = true;
         }
@@ -125,7 +127,7 @@ void SaberMode::updateFencerStatus(Fencer& fencer)
       // waiting for the contact time minimum can start (if touches are allowed)
       else if (fencer.touchesAllowed)
       {
-        fencer.depress_time_micros = get_current_time_micros();
+        fencer.depress_time_micros = now;
         fencer.depressed_on_target = true;
       }
     }

@@ -18,6 +18,8 @@ void updateSelfContact(boolean selfA, boolean selfB);
 
 void updateBreakInControlCircuit(boolean breakA, boolean breakB);
 
+void signalTimeExpired();
+
 void lightTest();
 
 extern volatile boolean displayingTouch;

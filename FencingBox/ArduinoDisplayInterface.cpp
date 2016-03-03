@@ -38,6 +38,7 @@ SRData currentState = CLEAR;
 /******************************************************************************/
 
 volatile boolean displayingTouch = false;
+volatile boolean signalingTimeExpired = false;
 
 void setTouchLEDStateInSR(boolean onTargetA, boolean offTargetA,
                           boolean onTargetB, boolean offTargetB);
@@ -103,12 +104,20 @@ void disableTouchLightsISR()
 
   // indicate that we are done displaying a touch internally (so FencingBox.ino can see it)
   displayingTouch = false;
-  
+
   Timer1.stop();
   Timer1.detachInterrupt();
 }
 
 void disableBuzzerISR()
+{
+  // turn off the buzzer
+  setBuzzerStateInSR(LOW);
+
+  signalingTimeExpired = false;
+}
+
+void disableBuzzerThenLightsISR()
 {
   // turn off the buzzer
   setBuzzerStateInSR(LOW);
@@ -120,8 +129,27 @@ void disableBuzzerISR()
   Timer1.resume();
 }
 
+void signalTimeExpired()
+{
+  // make sure we are not already displaying a touch (this shouldn't happen, but just in case)
+  if (!displayingTouch && !signalingTimeExpired)
+  {
+    /*
+     * I don't need to signal the Arduino Mega to stop the timer, because this call will have
+     * been prompted by the timer running out, at which point it will automatically stop.
+     */
 
+    signalingTimeExpired = true;
 
+    // only buzzer needs to go off, so set buzzer bit high
+    setBuzzerStateInSR(HIGH);
+
+    // set up an interrupt to call disableBuzzerISR() in BUZZER_TIME_US microseconds (1 sec)
+    Timer1.attachInterrupt(disableBuzzerISR,
+                           BUZZER_TIME_US);
+    Timer1.resume();
+  }
+}
 
 void signalTouch(boolean onTargetA, boolean offTargetA,
                  boolean onTargetB, boolean offTargetB)
@@ -135,7 +163,7 @@ void signalTouch(boolean onTargetA, boolean offTargetA,
     return;
   }
 
-  // interrupt the Arduino Mega to let it know to stop the timer.  This 
+  // interrupt the Arduino Mega to let it know to stop the timer.  This
   // signal is kept high until displaying this touch is completed, because
   // the way it is handled in the Mega allows this, and it guarantees the Mega
   // will not miss this signal.
@@ -155,8 +183,8 @@ void signalTouch(boolean onTargetA, boolean offTargetA,
   bitWrite(newState, BUZZER_BIT, HIGH);
   setSRState(newState);
 
-  // set up an interrupt to call disableBuzzer() in BUZZER_TIME_US microseconds (1 sec)
-  Timer1.attachInterrupt(disableBuzzerISR,
+  // set up an interrupt to call disableBuzzerThenLightsISR() in BUZZER_TIME_US microseconds (1 sec)
+  Timer1.attachInterrupt(disableBuzzerThenLightsISR,
                          BUZZER_TIME_US);
   Timer1.resume();
 }
